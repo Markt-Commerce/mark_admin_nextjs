@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/cn";
+import { PageSelect } from "./page-select";
 
 type Params = Record<string, string | undefined>;
 
@@ -25,10 +26,13 @@ function pageWindow(current: number, total: number): Array<number | "gap"> {
   return out;
 }
 
+const box = "inline-flex size-control items-center justify-center rounded-lg text-sm font-medium tabular-nums";
+
 /**
- * Pagination built only from the API envelope
- * `{ page, per_page, total_items, total_pages }`. Links keep every other
- * query parameter (search, filters), so the page is shareable.
+ * Pagination footer after reference A: "Page [01 ▾] out of N" and a grouped
+ * row of page boxes. Built only from the API envelope
+ * `{ page, per_page, total_items, total_pages }`; links keep every other
+ * query parameter.
  */
 export function Pagination({
   pathname,
@@ -51,64 +55,64 @@ export function Pagination({
   if (totalItems === 0) return null;
   const first = (page - 1) * perPage + 1;
   const last = Math.min(page * perPage, totalItems);
-  const linkCls =
-    "inline-flex min-h-control min-w-10 items-center justify-center gap-1 rounded-md px-3 text-sm font-medium";
+  const current = Math.min(page, Math.max(totalPages, 1));
 
   return (
-    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3 pt-4">
+    <nav aria-label="Pagination" className="flex flex-wrap items-center justify-between gap-3 pt-1">
       <p className="text-sm text-fg-muted">
-        Showing <span className="font-semibold text-fg tabular-nums">{first.toLocaleString("en-GB")}</span>–
-        <span className="font-semibold text-fg tabular-nums">{last.toLocaleString("en-GB")}</span> of{" "}
-        <span className="font-semibold text-fg tabular-nums">{totalItems.toLocaleString("en-GB")}</span>{" "}
+        {first.toLocaleString("en-GB")}–{last.toLocaleString("en-GB")} of {totalItems.toLocaleString("en-GB")}{" "}
         {totalItems === 1 ? noun : `${noun}s`}
       </p>
       {totalPages > 1 && (
-        <ul className="flex flex-wrap items-center gap-1">
-          <li>
-            {page > 1 ? (
-              <Link href={hrefFor(pathname, params, page - 1)} className={cn(linkCls, "hover:bg-surface-hover")}>
-                <ChevronLeft aria-hidden className="size-4" /> Previous
-              </Link>
-            ) : (
-              <span aria-disabled="true" className={cn(linkCls, "text-fg-muted opacity-60")}>
-                <ChevronLeft aria-hidden className="size-4" /> Previous
-              </span>
-            )}
-          </li>
-          {pageWindow(page, totalPages).map((p, i) =>
-            p === "gap" ? (
-              <li key={`gap-${i}`} aria-hidden className="px-1 text-fg-muted">
-                …
-              </li>
-            ) : (
-              <li key={p}>
-                <Link
-                  href={hrefFor(pathname, params, p)}
-                  aria-current={p === page ? "page" : undefined}
-                  aria-label={`Page ${p}`}
-                  className={cn(
-                    linkCls,
-                    "tabular-nums",
-                    p === page ? "bg-primary text-on-primary" : "hover:bg-surface-hover",
-                  )}
-                >
-                  {p}
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-fg-muted">
+            Page
+            <PageSelect pathname={pathname} params={params} page={current} totalPages={totalPages} />
+            out of {totalPages}
+          </div>
+          <ul className="flex items-center gap-0.5 rounded-xl bg-surface-muted p-1">
+            <li>
+              {page > 1 ? (
+                <Link href={hrefFor(pathname, params, page - 1)} aria-label="Previous page" className={cn(box, "text-fg hover:bg-surface")}>
+                  <ChevronLeft aria-hidden className="size-4" />
                 </Link>
-              </li>
-            ),
-          )}
-          <li>
-            {page < totalPages ? (
-              <Link href={hrefFor(pathname, params, page + 1)} className={cn(linkCls, "hover:bg-surface-hover")}>
-                Next <ChevronRight aria-hidden className="size-4" />
-              </Link>
-            ) : (
-              <span aria-disabled="true" className={cn(linkCls, "text-fg-muted opacity-60")}>
-                Next <ChevronRight aria-hidden className="size-4" />
-              </span>
+              ) : (
+                <span aria-disabled="true" aria-label="Previous page" className={cn(box, "text-border-strong")}>
+                  <ChevronLeft aria-hidden className="size-4" />
+                </span>
+              )}
+            </li>
+            {pageWindow(current, totalPages).map((p, i) =>
+              p === "gap" ? (
+                <li key={`gap-${i}`} aria-hidden className={cn(box, "text-fg-muted")}>
+                  …
+                </li>
+              ) : (
+                <li key={p}>
+                  <Link
+                    href={hrefFor(pathname, params, p)}
+                    aria-current={p === page ? "page" : undefined}
+                    aria-label={`Page ${p}`}
+                    className={cn(box, p === page ? "bg-surface font-semibold text-fg shadow-card" : "text-fg-muted hover:bg-surface hover:text-fg")}
+                  >
+                    {p}
+                  </Link>
+                </li>
+              ),
             )}
-          </li>
-        </ul>
+            <li>
+              {page < totalPages ? (
+                <Link href={hrefFor(pathname, params, page + 1)} aria-label="Next page" className={cn(box, "text-fg hover:bg-surface")}>
+                  <ChevronRight aria-hidden className="size-4" />
+                </Link>
+              ) : (
+                <span aria-disabled="true" aria-label="Next page" className={cn(box, "text-border-strong")}>
+                  <ChevronRight aria-hidden className="size-4" />
+                </span>
+              )}
+            </li>
+          </ul>
+        </div>
       )}
     </nav>
   );

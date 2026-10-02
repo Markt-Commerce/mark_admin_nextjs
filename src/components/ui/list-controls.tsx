@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, SlidersHorizontal, X } from "lucide-react";
+import { ListFilter, Search, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
@@ -46,7 +46,7 @@ export function SearchBox({
   ).toString();
 
   return (
-    <form action={pathname} method="get" role="search" className="relative w-full max-w-sm">
+    <form action={pathname} method="get" role="search" className="relative w-full sm:w-72">
       <HiddenParams params={params} omit={[name]} />
       <label htmlFor={id} className="sr-only">
         {label}
@@ -59,7 +59,7 @@ export function SearchBox({
         defaultValue={value}
         key={value}
         placeholder={placeholder}
-        className="min-h-control w-full rounded-md border border-border-strong bg-surface pr-10 pl-9 text-sm placeholder:text-fg-muted hover:border-fg-muted focus-visible:outline-2 focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:hidden"
+        className="min-h-control w-full rounded-lg border border-border bg-surface pr-10 pl-9 text-sm shadow-card placeholder:text-fg-muted hover:border-border-strong focus-visible:outline-2 focus-visible:outline-offset-0 [&::-webkit-search-cancel-button]:hidden"
       />
       {value && (
         <Link
@@ -144,12 +144,13 @@ export function FilterControl({
     <div ref={wrapper} className="relative">
       <Button
         ref={trigger}
-        icon={<SlidersHorizontal aria-hidden className="size-4" />}
+        icon={<ListFilter aria-hidden className="size-4" />}
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((o) => !o)}
+        className="rounded-lg border-border px-3 font-medium shadow-card"
       >
-        Filters
+        Filter
         {active > 0 && (
           <span className="ml-0.5 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs text-on-primary">
             {active}

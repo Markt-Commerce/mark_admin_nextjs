@@ -1,51 +1,58 @@
-import {
-  Ban,
-  CircleCheck,
-  CircleDashed,
-  CircleMinus,
-  CirclePause,
-  Clock,
-  Flag,
-  MapPin,
-  ShieldAlert,
-  ShieldCheck,
-  ShieldQuestion,
-  ShieldX,
-  Star,
-  Trash2,
-} from "lucide-react";
+import { Star } from "lucide-react";
 import type { ReactNode } from "react";
 import type { MarketStatus, SellerVerificationStatus, UserStatus } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { MARKET_STATUS, SELLER_VERIFICATION, type Tone, USER_STATUS } from "@/lib/status";
 
-const toneClass: Record<Tone, string> = {
-  success: "bg-success-bg text-success-fg border-success-border",
-  warning: "bg-warning-bg text-warning-fg border-warning-border",
-  danger: "bg-danger-bg text-danger-fg border-danger-border",
-  info: "bg-info-bg text-info-fg border-info-border",
-  attention: "bg-attention-bg text-attention-fg border-attention-border",
-  neutral: "bg-neutral-bg text-neutral-fg border-neutral-border",
-  muted: "bg-muted-bg text-muted-fg border-border",
-  brand: "bg-brand-subtle text-brand-strong border-brand/30",
+const tagTone: Record<Tone, string> = {
+  success: "bg-success-bg text-success-fg",
+  warning: "bg-warning-bg text-warning-fg",
+  danger: "bg-danger-bg text-danger-fg",
+  info: "bg-info-bg text-info-fg",
+  attention: "bg-attention-bg text-attention-fg",
+  neutral: "bg-neutral-bg text-neutral-fg",
+  muted: "bg-muted-bg text-muted-fg",
+  brand: "bg-brand-subtle text-brand-strong",
+};
+
+const outlineTone: Record<Tone, string> = {
+  success: "border-success-fg/60 text-success-fg",
+  warning: "border-warning-fg/60 text-warning-fg",
+  danger: "border-danger-fg/60 text-danger-fg",
+  info: "border-info-fg/60 text-info-fg",
+  attention: "border-attention-fg/60 text-attention-fg",
+  neutral: "border-neutral-fg/50 text-neutral-fg",
+  muted: "border-border-strong text-muted-fg",
+  brand: "border-brand-strong/60 text-brand-strong",
+};
+
+export const dotTone: Record<Tone, string> = {
+  success: "bg-success-fg",
+  warning: "bg-warning-fg",
+  danger: "bg-danger-fg",
+  info: "bg-info-fg",
+  attention: "bg-attention-fg",
+  neutral: "bg-neutral-fg",
+  muted: "bg-border-strong",
+  brand: "bg-brand",
 };
 
 /**
- * Small label. `pill` (rounded, tinted) is for state; `outline` (square-ish,
- * bordered) is used for the market axis so it never reads as the same thing
- * as the verification pill beside it.
+ * Labels in the three shapes of reference A:
+ * - `tag`: tinted, square-cornered ("Active Now"). Used for state.
+ * - `outline`: coloured outline, rounded ("Finance"). Used for the market
+ *   axis, so it never reads as the same thing as the verification tag.
+ * - `chip`: grey outline, rounded ("Reports"). Used for roles.
  */
 export function Badge({
   tone = "neutral",
-  shape = "pill",
-  icon,
+  shape = "tag",
   children,
   className,
   title,
 }: {
   tone?: Tone;
-  shape?: "pill" | "outline" | "chip";
-  icon?: ReactNode;
+  shape?: "tag" | "outline" | "chip";
   children: ReactNode;
   className?: string;
   title?: string;
@@ -54,68 +61,50 @@ export function Badge({
     <span
       title={title}
       className={cn(
-        "inline-flex items-center gap-1 text-xs font-semibold whitespace-nowrap",
-        shape === "pill" && "rounded-full border px-2.5 py-1",
-        shape === "outline" && "rounded-md border border-dashed bg-surface px-2 py-1",
-        shape === "chip" && "rounded-md border px-2 py-0.5 font-medium",
-        toneClass[tone],
-        shape === "outline" && "bg-surface",
+        "inline-flex items-center text-xs font-medium whitespace-nowrap",
+        shape === "tag" && `rounded-md px-2 py-1 ${tagTone[tone]}`,
+        shape === "outline" && `rounded-full border bg-surface px-2.5 py-0.5 ${outlineTone[tone]}`,
+        shape === "chip" &&
+          `rounded-full border bg-surface px-2.5 py-0.5 ${tone === "neutral" ? "border-border-strong text-fg" : outlineTone[tone]}`,
         className,
       )}
     >
-      {icon && <span aria-hidden className="[&>svg]:size-3.5">{icon}</span>}
       {children}
     </span>
   );
 }
 
-const USER_ICON: Record<UserStatus, ReactNode> = {
-  active: <CircleCheck />,
-  suspended: <CirclePause />,
-  banned: <Ban />,
-  deactivated: <CircleMinus />,
-  deleted: <Trash2 />,
-};
-
 export function UserStatusPill({ status }: { status: UserStatus }) {
   const meta = USER_STATUS[status];
   return (
-    <Badge tone={meta.tone} icon={USER_ICON[status]} title={meta.description}>
+    <Badge tone={meta.tone} title={meta.description}>
       {meta.label}
     </Badge>
   );
 }
 
-const VERIFICATION_ICON: Record<SellerVerificationStatus, ReactNode> = {
-  unverified: <ShieldQuestion />,
-  pending: <Clock />,
-  verified: <ShieldCheck />,
-  rejected: <ShieldX />,
-  suspended: <ShieldAlert />,
-};
-
-/** Axis 1: KYC / trust verification. Solid pill with a shield icon. */
+/** Axis 1: KYC / trust verification. Tinted tag. */
 export function VerificationPill({ status }: { status: SellerVerificationStatus | null }) {
   if (!status) return <Badge tone="muted">No verification status</Badge>;
   const meta = SELLER_VERIFICATION[status];
   return (
-    <Badge tone={meta.tone} icon={VERIFICATION_ICON[status]} title={meta.description}>
+    <Badge tone={meta.tone} title={meta.description}>
       {meta.label}
     </Badge>
   );
 }
 
-/** Axis 2: market verification. Outlined label with a map/flag icon. */
+/** Axis 2: market verification. Coloured outline, like reference A's department tags. */
 export function MarketPill({ status }: { status: MarketStatus | null }) {
-  if (!status) return <Badge tone="muted" shape="outline">No market status</Badge>;
+  if (!status)
+    return (
+      <Badge tone="muted" shape="outline">
+        No market status
+      </Badge>
+    );
   const meta = MARKET_STATUS[status];
   return (
-    <Badge
-      tone={meta.tone}
-      shape="outline"
-      icon={status === "flagged" ? <Flag /> : <MapPin />}
-      title={meta.description}
-    >
+    <Badge tone={meta.tone} shape="outline" title={meta.description}>
       {meta.label}
     </Badge>
   );
@@ -124,11 +113,9 @@ export function MarketPill({ status }: { status: MarketStatus | null }) {
 /** Axis 3a: can the shop sell right now (`is_active`). */
 export function SellingPill({ active }: { active: boolean }) {
   return active ? (
-    <Badge tone="success" shape="chip" icon={<CircleCheck />}>
-      Selling
-    </Badge>
+    <Badge tone="success">Selling</Badge>
   ) : (
-    <Badge tone="neutral" shape="chip" icon={<CircleDashed />} title="The shop can't sell. It was suspended, or the seller role was turned off.">
+    <Badge tone="neutral" title="The shop can't sell. It was suspended, or the seller role was turned off.">
       Not selling
     </Badge>
   );
@@ -138,10 +125,7 @@ export function SellingPill({ active }: { active: boolean }) {
 export function FeaturedMark({ featured, withLabel }: { featured: boolean; withLabel?: boolean }) {
   return (
     <span className="inline-flex items-center gap-1 text-sm" title={featured ? "Featured" : "Not featured"}>
-      <Star
-        aria-hidden
-        className={cn("size-4", featured ? "fill-brand text-brand" : "text-border-strong")}
-      />
+      <Star aria-hidden className={cn("size-4", featured ? "fill-brand text-brand" : "text-border-strong")} />
       {withLabel ? (
         <span className={featured ? "font-medium text-fg" : "text-fg-muted"}>{featured ? "Featured" : "Not featured"}</span>
       ) : (
@@ -151,11 +135,16 @@ export function FeaturedMark({ featured, withLabel }: { featured: boolean; withL
   );
 }
 
-/** Role chip for the users table and profile card. */
+/** Role chip (reference A's permission chips). */
 export function RoleChip({ children, tone = "neutral" }: { children: ReactNode; tone?: Tone }) {
   return (
     <Badge tone={tone} shape="chip">
       {children}
     </Badge>
   );
+}
+
+/** Small coloured dot used in filter chips and legends. */
+export function Dot({ tone }: { tone: Tone }) {
+  return <span aria-hidden className={cn("inline-block size-2 shrink-0 rounded-full", dotTone[tone])} />;
 }

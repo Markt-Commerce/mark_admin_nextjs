@@ -28,31 +28,44 @@ export function PageHeader({
 }
 
 /**
- * List page: header, a toolbar (search on the left, filters on the right),
- * then the table and pagination. Users and Sellers both use this.
+ * List page after reference A: one white panel with the title bar, a
+ * toolbar (quick-filter chips on the left; Filter and search on the
+ * right), then the table and the pagination footer.
  */
-export function ListPage({
-  header,
-  search,
+export function ListPanel({
+  title,
+  actions,
+  chips,
   filters,
+  search,
   children,
 }: {
-  header: ReactNode;
-  search?: ReactNode;
+  title: ReactNode;
+  actions?: ReactNode;
+  chips?: ReactNode;
   filters?: ReactNode;
+  search?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-6">
-      {header}
-      {(search || filters) && (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0 flex-1">{search}</div>
-          {filters && <div className="flex items-center gap-2">{filters}</div>}
-        </div>
-      )}
-      <div>{children}</div>
-    </div>
+    <section className="rounded-xl border border-border bg-surface shadow-card">
+      <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-3">
+        <h1 className="text-lg font-semibold text-fg">{title}</h1>
+        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      </header>
+      <div className="flex flex-col gap-4 p-5">
+        {(chips || filters || search) && (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="min-w-0">{chips}</div>
+            <div className="flex flex-wrap items-center gap-2">
+              {filters}
+              {search}
+            </div>
+          </div>
+        )}
+        {children}
+      </div>
+    </section>
   );
 }
 

@@ -1,7 +1,8 @@
-/* eslint-disable @next/next/no-img-element -- static brand SVG */
-import { ShieldCheck } from "lucide-react";
+/* eslint-disable @next/next/no-img-element -- static brand SVGs */
 import type { Metadata } from "next";
+import { Watermark } from "@/components/brand/watermark";
 import { Banner } from "@/components/ui/surface";
+import { CloudEdge } from "./cloud-edge";
 import { LoginForm } from "./login-form";
 
 export const metadata: Metadata = { title: "Sign in" };
@@ -19,6 +20,10 @@ const NOTICES: Record<string, { tone: "info" | "warning"; title: string; body: s
   },
 };
 
+/**
+ * Sign-in page after reference C: a brand panel on the left with a scalloped
+ * cloud edge and a faint logo watermark, the form on the right.
+ */
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const sp = await searchParams;
   const reason = typeof sp.reason === "string" ? sp.reason : undefined;
@@ -26,24 +31,32 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const notice = reason ? NOTICES[reason] : undefined;
 
   return (
-    <div className="grid min-h-dvh lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
-      {/* Brand panel (reference C). brand-strong keeps white text at 5:1. */}
-      <aside className="relative hidden flex-col justify-between overflow-hidden bg-brand-strong p-12 text-white lg:flex">
-        <img src="/brand/markt-logo.svg" alt="Markt" className="h-12 w-auto self-start brightness-0 invert" />
-        <div className="max-w-sm">
-          <h1 className="text-2xl font-semibold">Markt staff console</h1>
-          <p className="mt-3 text-base leading-7">
-            Review seller verification, look after customer accounts and keep shops trustworthy.
+    <div className="relative grid min-h-dvh overflow-hidden bg-surface lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+      {/* Brand panel. The gradient keeps white body text at 4.5:1 or better. */}
+      <aside className="relative hidden overflow-hidden bg-gradient-to-b from-brand via-brand-strong to-brand-deep text-white lg:block">
+        <Watermark className="absolute -bottom-28 -left-24 w-[24rem] rotate-[-14deg] text-white opacity-15" />
+        <div className="relative flex h-full flex-col items-center justify-between px-12 pt-16 pb-10 pr-44 text-center">
+          <div />
+          <div className="flex flex-col items-center">
+            <p className="text-3xl font-bold">Welcome to</p>
+            <img src="/brand/markt-logo.svg" alt="Markt" className="mt-10 h-28 w-auto brightness-0 invert" />
+            <p className="mt-14 max-w-xs text-sm leading-6">
+              The staff console for reviewing sellers, looking after customer accounts and keeping shops trustworthy.
+            </p>
+          </div>
+          <p className="text-sm">
+            For <span className="font-semibold">Markt staff</span> only
           </p>
         </div>
-        <p className="text-sm">For Markt staff only.</p>
+        <CloudEdge className="absolute top-0 right-0 h-full w-64" />
       </aside>
 
-      <main className="flex items-center justify-center bg-surface px-4 py-12 sm:px-8">
-        <div className="w-full max-w-sm">
-          <img src="/brand/markt-logo.svg" alt="Markt" className="mb-8 h-10 w-auto lg:hidden" />
-          <h2 className="text-2xl font-semibold text-fg">Sign in</h2>
-          <p className="mt-1 text-sm text-fg-muted">Use your Markt staff email and password.</p>
+      <main className="relative flex items-center px-6 py-12 sm:px-12 lg:px-20">
+        <Watermark className="absolute -right-20 -bottom-24 hidden w-[22rem] rotate-[-14deg] text-brand opacity-10 lg:block" />
+        <div className="relative w-full max-w-md">
+          <img src="/brand/markt-logo.svg" alt="Markt" className="mb-10 h-10 w-auto lg:hidden" />
+          <h1 className="text-4xl font-bold text-brand">Sign in</h1>
+          <p className="mt-2 text-sm text-fg-muted">Please fill in your staff credentials to sign in.</p>
 
           {notice && (
             <Banner tone={notice.tone} title={notice.title} className="mt-6">
@@ -51,17 +64,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             </Banner>
           )}
 
-          <div className="mt-6">
+          <div className="mt-8">
             <LoginForm next={next} />
           </div>
-
-          <p className="mt-8 flex items-start gap-2 text-sm text-fg-muted">
-            <ShieldCheck aria-hidden className="mt-0.5 size-4 shrink-0" />
-            <span>
-              Don&apos;t share your sign-in details. Every action you take in the console is recorded against your
-              account.
-            </span>
-          </p>
         </div>
       </main>
     </div>

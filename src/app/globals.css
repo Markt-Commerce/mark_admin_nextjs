@@ -17,6 +17,7 @@
   --color-brand: #e94c2a; /* logo, accents, active nav marker. Not for text (3.8:1). */
   --color-brand-strong: #c93d1f; /* brand-coloured text and links (5.0:1 on white) */
   --color-brand-subtle: #fff5f2; /* tinted brand surface (brand-strong on it: 4.7:1) */
+  --color-brand-deep: #a8321a; /* sign-in panel gradient end, brand button hover (6.7:1) */
 
   /* --- Actions ------------------------------------------------------ */
   --color-primary: #1c1c1c; /* safe primary actions: Save, Verify */

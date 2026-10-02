@@ -1,10 +1,12 @@
-import { BadgeCheck, CircleDashed } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
-import { ListPage, PageHeader } from "@/components/patterns/layout";
+import { ListPanel } from "@/components/patterns/layout";
 import { NoPermission } from "@/components/shell/no-permission";
 import { Avatar } from "@/components/ui/avatar";
-import { RoleChip, UserStatusPill } from "@/components/ui/badge";
+import { Badge, RoleChip, UserStatusPill } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { FilterControl, SearchBox } from "@/components/ui/list-controls";
 import { Pagination } from "@/components/ui/pagination";
 import { type Column, DataTable } from "@/components/ui/table";
@@ -27,6 +29,11 @@ const ROLE_FILTER_LABEL: Record<(typeof USER_ROLE_FILTERS)[number], string> = {
   staff: "Staff with an admin role",
 };
 
+function href(params: Record<string, string | undefined>) {
+  const qs = new URLSearchParams(compact(params)).toString();
+  return qs ? `${PATH}?${qs}` : PATH;
+}
+
 export default async function UsersPage({ searchParams }: PageProps<"/users">) {
   const me = await getMe();
   if (!can(me, "user.view")) return <NoPermission what="users" />;
@@ -42,13 +49,27 @@ export default async function UsersPage({ searchParams }: PageProps<"/users">) {
   const result = await adminGet<Page<AdminUserListItem>>("/admin/users", { ...params, page, per_page: PER_PAGE });
 
   return (
-    <ListPage
-      header={<PageHeader title="Users" description="Every Markt account: buyers, sellers and staff." />}
-      search={<SearchBox pathname={PATH} params={params} label="Search users" placeholder="Search by email, username, ID or phone" />}
+    <ListPanel
+      title="Users"
+      chips={
+        <FilterChips
+          label="Account status"
+          items={[
+            { label: "All", href: href({ q, role }), active: !status },
+            ...USER_STATUSES.map((s) => ({
+              label: USER_STATUS[s].label,
+              href: href({ q, role, status: s }),
+              active: status === s,
+              tone: USER_STATUS[s].tone,
+            })),
+          ]}
+        />
+      }
       filters={
         <FilterControl
           pathname={PATH}
           params={params}
+          keep={["q", "status"]}
           filters={[
             {
               name: "role",
@@ -56,15 +77,10 @@ export default async function UsersPage({ searchParams }: PageProps<"/users">) {
               anyLabel: "All roles",
               options: USER_ROLE_FILTERS.map((r) => ({ value: r, label: ROLE_FILTER_LABEL[r] })),
             },
-            {
-              name: "status",
-              label: "Account status",
-              anyLabel: "All statuses",
-              options: USER_STATUSES.map((s) => ({ value: s, label: USER_STATUS[s].label })),
-            },
           ]}
         />
       }
+      search={<SearchBox pathname={PATH} params={params} label="Search users" placeholder="Search by email, name, ID or phone" />}
     >
       <DataTable
         caption="Users"
@@ -72,13 +88,14 @@ export default async function UsersPage({ searchParams }: PageProps<"/users">) {
         rows={result.ok ? result.data.items : []}
         rowKey={(u) => u.id}
         stickyLastColumn
+        minWidth="68rem"
         error={result.ok ? undefined : { message: result.error.message, action: <ButtonLink href={PATH}>Try again</ButtonLink> }}
         empty={
           result.ok && result.data.total_items > 0
             ? {
                 title: "No users on this page",
                 description: "The list has fewer pages than this.",
-                action: <ButtonLink href={PATH}>Go to the first page</ButtonLink>,
+                action: <ButtonLink href={href(params)}>Go to the first page</ButtonLink>,
               }
             : filtered
               ? {
@@ -100,7 +117,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/users">) {
           noun="user"
         />
       )}
-    </ListPage>
+    </ListPanel>
   );
 }
 
@@ -111,18 +128,24 @@ const COLUMNS: Column<AdminUserListItem>[] = [
     cell: (u) => (
       <span className="flex items-center gap-3">
         <Avatar src={u.profile_picture} name={u.username ?? u.email} size="sm" />
-        <span className="flex min-w-0 flex-col">
-          <span className="truncate font-medium text-fg">{u.username ?? <span className="text-fg-muted">No username</span>}</span>
-          <span className="truncate text-fg-muted">{u.email}</span>
-        </span>
+        <span className="truncate font-medium text-fg">{u.username ?? <span className="text-fg-muted">No username</span>}</span>
       </span>
     ),
   },
   {
-    key: "phone",
-    header: "Phone",
-    className: "whitespace-nowrap",
-    cell: (u) => u.phone_number ?? <Dash />,
+    key: "email",
+    header: "Email",
+    cell: (u) => (
+      <span className="flex items-center gap-0.5">
+        <span className="truncate">{u.email}</span>
+        <CopyButton value={u.email} label="email address" />
+      </span>
+    ),
+  },
+  {
+    key: "verified",
+    header: "Email check",
+    cell: (u) => (u.email_verified ? <Badge tone="success">Verified</Badge> : <Badge tone="neutral">Not verified</Badge>),
   },
   {
     key: "roles",
@@ -147,19 +170,10 @@ const COLUMNS: Column<AdminUserListItem>[] = [
     },
   },
   {
-    key: "email_verified",
-    header: "Email",
+    key: "phone",
+    header: "Phone",
     className: "whitespace-nowrap",
-    cell: (u) =>
-      u.email_verified ? (
-        <span className="inline-flex items-center gap-1.5 text-success-fg">
-          <BadgeCheck aria-hidden className="size-4" /> Verified
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-1.5 text-fg-muted">
-          <CircleDashed aria-hidden className="size-4" /> Not verified
-        </span>
-      ),
+    cell: (u) => u.phone_number ?? <Dash />,
   },
   { key: "status", header: "Status", cell: (u) => <UserStatusPill status={u.status} /> },
   {
@@ -176,11 +190,16 @@ const COLUMNS: Column<AdminUserListItem>[] = [
   },
   {
     key: "view",
-    header: <span className="sr-only">Open</span>,
+    header: <span className="sr-only">Actions</span>,
     className: "text-right",
     cell: (u) => (
-      <ButtonLink href={`/users/${encodeURIComponent(u.id)}`} aria-label={`View ${u.username ?? u.email}`}>
-        View
+      <ButtonLink
+        href={`/users/${encodeURIComponent(u.id)}`}
+        variant="tinted"
+        aria-label={`View ${u.username ?? u.email}`}
+        className="gap-1 px-3"
+      >
+        View <ChevronRight aria-hidden className="size-4" />
       </ButtonLink>
     ),
   },

@@ -72,6 +72,35 @@ export function Input({ className, ...rest }: ComponentProps<"input">) {
   return <input className={cn(control, "min-h-control", className)} {...rest} />;
 }
 
+/** Input with an icon inside on the left (reference D's mail field). */
+export function IconInput({ icon, className, ...rest }: ComponentProps<"input"> & { icon: ReactNode }) {
+  return (
+    <span className={cn("relative block", className)}>
+      <span aria-hidden className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-fg-muted [&>svg]:size-4">
+        {icon}
+      </span>
+      <input className={cn(control, "min-h-control pl-9")} {...rest} />
+    </span>
+  );
+}
+
+/**
+ * Bottom-border-only input (reference C's sign-in fields). The underline
+ * uses fg-muted so the field edge still meets 3:1 non-text contrast.
+ */
+export function UnderlineInput({ className, ...rest }: ComponentProps<"input">) {
+  return (
+    <input
+      className={cn(
+        "min-h-control w-full border-0 border-b border-fg-muted bg-transparent px-0 text-sm text-fg placeholder:text-fg-muted",
+        "focus-visible:border-b-2 focus-visible:border-brand-strong focus-visible:outline-none aria-invalid:border-danger",
+        className,
+      )}
+      {...rest}
+    />
+  );
+}
+
 export function Textarea({ className, rows = 4, ...rest }: ComponentProps<"textarea">) {
   return <textarea rows={rows} className={cn(control, "py-2.5 leading-6", className)} {...rest} />;
 }

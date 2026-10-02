@@ -43,7 +43,7 @@ export function DataTable<T>({
       ? "sticky right-0 shadow-[-12px_0_12px_-12px_rgb(16_24_40/0.18)]"
       : undefined;
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
+    <div className="overflow-hidden rounded-lg border border-border bg-surface">
       {/* relative: keeps sr-only (absolutely positioned) labels inside the
           scroll box, so they can't widen the page. */}
       <div className="relative overflow-x-auto">
@@ -56,7 +56,7 @@ export function DataTable<T>({
                   key={col.key}
                   scope="col"
                   className={cn(
-                    "border-b border-border bg-surface-muted px-4 py-3 text-xs font-semibold text-fg-muted",
+                    "border-b border-border bg-surface-muted px-4 py-3 text-[13px] font-medium text-fg-muted",
                     sticky(i),
                     col.className,
                   )}
@@ -133,7 +133,7 @@ function TableMessage({
 /** Placeholder rows while a list loads (used by loading.tsx files). */
 export function TableSkeleton({ columns = 6, rows = 8, caption }: { columns?: number; rows?: number; caption: string }) {
   return (
-    <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card" aria-busy="true">
+    <div className="overflow-hidden rounded-lg border border-border bg-surface" aria-busy="true">
       <span className="sr-only" role="status">
         Loading {caption}
       </span>

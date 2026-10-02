@@ -1,11 +1,12 @@
-import { Star } from "lucide-react";
+import { ChevronRight, Star } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ListPage, PageHeader } from "@/components/patterns/layout";
+import { ListPanel } from "@/components/patterns/layout";
 import { NoPermission } from "@/components/shell/no-permission";
 import { Avatar } from "@/components/ui/avatar";
 import { FeaturedMark, MarketPill, SellingPill, VerificationPill } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
+import { CopyButton } from "@/components/ui/copy-button";
+import { FilterChips } from "@/components/ui/filter-chips";
 import { FilterControl, SearchBox } from "@/components/ui/list-controls";
 import { Pagination } from "@/components/ui/pagination";
 import { type Column, DataTable } from "@/components/ui/table";
@@ -14,8 +15,8 @@ import {
   MARKET_STATUSES,
   type Page,
   SELLER_VERIFICATION_STATUSES,
+  type SellerVerificationStatus,
 } from "@/lib/api/types";
-import { cn } from "@/lib/cn";
 import { adminGet, getMe } from "@/lib/dal";
 import { formatDate, formatRating } from "@/lib/format";
 import { can } from "@/lib/permissions";
@@ -28,6 +29,14 @@ const PER_PAGE = 20;
 const PATH = "/sellers";
 /** "Any verification status": distinguishable from "no choice yet" (pending). */
 const ALL = "all";
+
+/** Chip order: the review queue first, then the whole directory. */
+const CHIP_ORDER: SellerVerificationStatus[] = ["verified", "rejected", "unverified", "suspended"];
+
+function href(params: Record<string, string | undefined>) {
+  const qs = new URLSearchParams(compact(params)).toString();
+  return qs ? `${PATH}?${qs}` : PATH;
+}
 
 export default async function SellersPage({ searchParams }: PageProps<"/sellers">) {
   const me = await getMe();
@@ -59,40 +68,41 @@ export default async function SellersPage({ searchParams }: PageProps<"/sellers"
     is_active: isActive,
     is_featured: isFeatured,
   });
+  const others = { q, market_status: market, is_active: isActive, is_featured: isFeatured };
   const filtered = !!(q || market || isActive || isFeatured);
   const queue = verification === "pending";
 
   const result = await adminGet<Page<AdminSellerListItem>>("/admin/sellers", { ...apiQuery, page, per_page: PER_PAGE });
 
   return (
-    <ListPage
-      header={
-        <div className="flex flex-col gap-4">
-          <PageHeader
-            title="Sellers"
-            description={
-              queue
-                ? "Verification queue: shops waiting for a reviewer, newest first."
-                : "Every shop on Markt. Verification, market check and selling status are separate."
-            }
-          />
-          <ViewSwitch current={queue ? "queue" : verification === undefined && !filtered ? "all" : null} q={q} />
-        </div>
+    <ListPanel
+      title={queue ? "Sellers awaiting review" : "Sellers"}
+      chips={
+        <FilterChips
+          label="Verification status"
+          items={[
+            {
+              label: SELLER_VERIFICATION.pending.label,
+              href: href({ ...others, verification_status: "pending" }),
+              active: queue,
+              tone: SELLER_VERIFICATION.pending.tone,
+            },
+            { label: "All shops", href: href({ ...others, verification_status: ALL }), active: verification === undefined },
+            ...CHIP_ORDER.map((s) => ({
+              label: SELLER_VERIFICATION[s].label,
+              href: href({ ...others, verification_status: s }),
+              active: verification === s,
+              tone: SELLER_VERIFICATION[s].tone,
+            })),
+          ]}
+        />
       }
-      search={<SearchBox pathname={PATH} params={params} label="Search sellers" placeholder="Search by shop name, handle, owner email or username" />}
       filters={
         <FilterControl
           pathname={PATH}
           params={params}
-          clearTo={{ verification_status: ALL }}
+          keep={["q", "verification_status"]}
           filters={[
-            {
-              name: "verification_status",
-              label: "Verification",
-              anyLabel: "Any verification status",
-              anyValue: ALL,
-              options: SELLER_VERIFICATION_STATUSES.map((s) => ({ value: s, label: SELLER_VERIFICATION[s].label })),
-            },
             {
               name: "market_status",
               label: "Market check",
@@ -120,13 +130,14 @@ export default async function SellersPage({ searchParams }: PageProps<"/sellers"
           ]}
         />
       }
+      search={<SearchBox pathname={PATH} params={params} label="Search sellers" placeholder="Search shop, handle or owner" />}
     >
       <DataTable
-        caption={queue ? "Sellers waiting for verification review" : "Sellers"}
+        caption={queue ? "Sellers waiting for verification review, newest first" : "Sellers"}
         columns={COLUMNS}
         rows={result.ok ? result.data.items : []}
         rowKey={(s) => s.id}
-        minWidth="70rem"
+        minWidth="76rem"
         stickyLastColumn
         error={result.ok ? undefined : { message: result.error.message, action: <ButtonLink href={PATH}>Try again</ButtonLink> }}
         empty={
@@ -134,18 +145,18 @@ export default async function SellersPage({ searchParams }: PageProps<"/sellers"
             ? {
                 title: "No sellers on this page",
                 description: "The list has fewer pages than this.",
-                action: <ButtonLink href={PATH}>Go to the first page</ButtonLink>,
+                action: <ButtonLink href={href(params)}>Go to the first page</ButtonLink>,
               }
             : queue && !filtered
               ? {
                   title: "The queue is clear",
                   description: "No shops are waiting for verification review.",
-                  action: <ButtonLink href={`${PATH}?verification_status=${ALL}`}>View all shops</ButtonLink>,
+                  action: <ButtonLink href={href({ verification_status: ALL })}>View all shops</ButtonLink>,
                 }
               : {
                   title: "No sellers match",
                   description: "Try a different search, or clear the filters.",
-                  action: <ButtonLink href={`${PATH}?verification_status=${ALL}`}>Clear search and filters</ButtonLink>,
+                  action: <ButtonLink href={href({ verification_status: ALL })}>Clear search and filters</ButtonLink>,
                 }
         }
       />
@@ -160,33 +171,7 @@ export default async function SellersPage({ searchParams }: PageProps<"/sellers"
           noun="seller"
         />
       )}
-    </ListPage>
-  );
-}
-
-/** Two common starting points: the review queue and the whole directory. */
-function ViewSwitch({ current, q }: { current: "queue" | "all" | null; q?: string }) {
-  const suffix = q ? `&q=${encodeURIComponent(q)}` : "";
-  const items = [
-    { key: "queue", label: "Awaiting review", href: `${PATH}?verification_status=pending${suffix}` },
-    { key: "all", label: "All shops", href: `${PATH}?verification_status=${ALL}${suffix}` },
-  ] as const;
-  return (
-    <nav aria-label="Seller views" className="flex w-fit gap-1 rounded-lg border border-border bg-surface p-1">
-      {items.map((item) => (
-        <Link
-          key={item.key}
-          href={item.href}
-          aria-current={current === item.key ? "page" : undefined}
-          className={cn(
-            "inline-flex min-h-control items-center rounded-md px-4 text-sm font-semibold",
-            current === item.key ? "bg-primary text-on-primary" : "text-fg-muted hover:bg-surface-hover hover:text-fg",
-          )}
-        >
-          {item.label}
-        </Link>
-      ))}
-    </nav>
+    </ListPanel>
   );
 }
 
@@ -199,7 +184,7 @@ const COLUMNS: Column<AdminSellerListItem>[] = [
         <Avatar name={s.shop_name} size="sm" square />
         <span className="flex min-w-0 flex-col">
           <span className="truncate font-medium text-fg">{s.shop_name ?? <span className="text-fg-muted">No shop name</span>}</span>
-          {s.shop_slug && <span className="truncate font-mono text-xs text-fg-muted">{s.shop_slug}</span>}
+          {s.shop_slug && <span className="truncate text-xs text-fg-muted">{s.shop_slug}</span>}
         </span>
       </span>
     ),
@@ -207,17 +192,23 @@ const COLUMNS: Column<AdminSellerListItem>[] = [
   {
     key: "owner",
     header: "Owner",
-    cell: (s) => (
-      <span className="flex min-w-0 flex-col">
-        <span className="truncate text-fg">{s.username ?? <span className="text-fg-muted">No username</span>}</span>
-        <span className="truncate text-fg-muted">{s.email}</span>
-      </span>
-    ),
+    cell: (s) =>
+      s.email ? (
+        <span className="flex items-center gap-0.5">
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-fg">{s.username ?? <span className="text-fg-muted">No username</span>}</span>
+            <span className="truncate text-xs text-fg-muted">{s.email}</span>
+          </span>
+          <CopyButton value={s.email} label="owner's email address" />
+        </span>
+      ) : (
+        <span className="text-fg-muted">No owner</span>
+      ),
   },
   { key: "verification", header: "Verification", cell: (s) => <VerificationPill status={s.verification_status} /> },
   { key: "market", header: "Market check", cell: (s) => <MarketPill status={s.market_verification_status} /> },
   { key: "selling", header: "Selling", cell: (s) => <SellingPill active={s.is_active} /> },
-  { key: "featured", header: "Featured", cell: (s) => <FeaturedMark featured={s.is_featured} /> },
+  { key: "featured", header: "Featured", className: "text-center", cell: (s) => <FeaturedMark featured={s.is_featured} /> },
   {
     key: "rating",
     header: "Rating",
@@ -243,11 +234,11 @@ const COLUMNS: Column<AdminSellerListItem>[] = [
   },
   {
     key: "view",
-    header: <span className="sr-only">Open</span>,
+    header: <span className="sr-only">Actions</span>,
     className: "text-right",
     cell: (s) => (
-      <ButtonLink href={`/sellers/${s.id}`} aria-label={`View ${s.shop_name ?? `seller ${s.id}`}`}>
-        View
+      <ButtonLink href={`/sellers/${s.id}`} variant="tinted" aria-label={`View ${s.shop_name ?? `seller ${s.id}`}`} className="gap-1 px-3">
+        View <ChevronRight aria-hidden className="size-4" />
       </ButtonLink>
     ),
   },

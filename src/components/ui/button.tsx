@@ -3,7 +3,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Spinner } from "./spinner";
 
-export type ButtonVariant = "primary" | "secondary" | "danger" | "danger-outline" | "ghost";
+export type ButtonVariant = "primary" | "secondary" | "danger" | "danger-outline" | "ghost" | "tinted" | "brand";
 
 const base =
   "inline-flex min-h-control items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold whitespace-nowrap " +
@@ -23,6 +23,10 @@ const variants: Record<ButtonVariant, string> = {
   "danger-outline":
     "border border-danger-border bg-surface text-danger-fg hover:bg-danger-subtle disabled:text-fg-muted disabled:border-border",
   ghost: "text-fg hover:bg-surface-hover disabled:text-fg-muted",
+  // Row "View ›" button (reference A): tinted, low emphasis.
+  tinted: "bg-brand-subtle text-brand-strong ring-1 ring-transparent ring-inset hover:ring-brand/40",
+  // Brand-coloured button, only on the sign-in page (reference C).
+  brand: "bg-brand-strong text-on-primary hover:bg-brand-deep disabled:opacity-60",
 };
 
 interface CommonProps {
@@ -72,21 +76,29 @@ export function ButtonLink({ variant = "secondary", icon, fullWidth, className, 
   );
 }
 
-/** Square icon-only button. `label` is required: it becomes the accessible name. */
+/** Shared look for round outlined icon buttons (reference B's mail / call / ⋯ row). */
+export const circleIconClass =
+  "inline-flex size-control items-center justify-center rounded-full border border-border bg-surface text-fg-muted shadow-card hover:bg-surface-hover hover:text-fg";
+
+/** Icon-only button. `label` is required: it becomes the accessible name. */
 export function IconButton({
   label,
   icon,
+  shape = "square",
   className,
   type = "button",
   ...rest
-}: Omit<ComponentProps<"button">, "children"> & { label: string; icon: ReactNode }) {
+}: Omit<ComponentProps<"button">, "children"> & { label: string; icon: ReactNode; shape?: "square" | "circle" }) {
   return (
     <button
       type={type}
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex size-control items-center justify-center rounded-md text-fg-muted hover:bg-surface-hover hover:text-fg disabled:cursor-not-allowed disabled:opacity-60",
+        shape === "circle"
+          ? circleIconClass
+          : "inline-flex size-control items-center justify-center rounded-md text-fg-muted hover:bg-surface-hover hover:text-fg",
+        "disabled:cursor-not-allowed disabled:opacity-60",
         className,
       )}
       {...rest}
