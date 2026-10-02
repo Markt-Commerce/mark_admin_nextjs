@@ -17,13 +17,13 @@ export function ProfileCard({
   name: ReactNode;
   subtitle?: ReactNode;
   badges?: ReactNode;
-  /** Vertical stack of full-width buttons. */
+  /** Compact actions and the permission-gated overflow menu. */
   actions?: ReactNode;
   /** Extra details below the actions. */
   children?: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-border bg-surface shadow-card">
+    <section>
       <div className="flex flex-col items-center gap-3 px-5 pt-6 pb-5 text-center">
         {avatar}
         <div className="min-w-0 max-w-full">
@@ -32,7 +32,7 @@ export function ProfileCard({
         </div>
         {badges && <div className="flex flex-wrap justify-center gap-1.5">{badges}</div>}
       </div>
-      {actions && <div className="flex flex-col gap-2 border-t border-border px-5 py-4">{actions}</div>}
+      {actions && <div className="flex flex-col gap-3 px-4 pb-5">{actions}</div>}
       {children && <div className="border-t border-border px-5 py-4">{children}</div>}
     </section>
   );

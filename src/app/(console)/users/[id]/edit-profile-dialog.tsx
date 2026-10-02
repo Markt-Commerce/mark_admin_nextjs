@@ -1,13 +1,14 @@
 "use client";
 
-import { ImageUp, X } from "lucide-react";
+import { ImageUp, X, UserRound, Phone } from "lucide-react";
 /* eslint-disable @next/next/no-img-element -- local preview of a chosen file */
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { AuditNotice } from "@/components/patterns/action-dialog";
 import { FormRow } from "@/components/patterns/form-row";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { describedBy, Input } from "@/components/ui/field";
+import { describedBy, IconInput } from "@/components/ui/field";
+import { CopyButton } from "@/components/ui/copy-button";
 import { Modal } from "@/components/ui/modal";
 import { Banner } from "@/components/ui/surface";
 import type { ApiError } from "@/lib/api/errors";
@@ -129,6 +130,12 @@ function EditProfileModal({ open, onClose, user, onSaved }: Props) {
       onClose={onClose}
       busy={pending}
       title="Edit profile"
+      identity={{
+        name: user.username ?? user.email,
+        subtitle: user.email,
+        avatar: preview ? <img src={preview} alt="New profile photo preview" className="size-16 rounded-full object-cover" /> : <Avatar src={user.profile_picture} name={user.username ?? user.email} size="lg" />,
+        actions: <CopyButton value={user.email} label="email" variant="button" />,
+      }}
       description="Correct this user's username, phone number or photo."
       footer={
         <>
@@ -166,7 +173,7 @@ function EditProfileModal({ open, onClose, user, onSaved }: Props) {
                 aria-label="Choose a new profile photo"
               />
               <Button icon={<ImageUp className="size-4" />} onClick={() => fileInput.current?.click()} disabled={pending}>
-                {file ? "Choose a different photo" : "Upload new photo"}
+                {file ? "Choose a different photo" : "Click to replace"}
               </Button>
               {file && (
                 <Button
@@ -185,7 +192,8 @@ function EditProfileModal({ open, onClose, user, onSaved }: Props) {
             <p className="text-sm text-fg-muted">JPEG, PNG, WebP or GIF, up to 10 MB.</p>
           </FormRow>
           <FormRow id={usernameId} label="Username" error={usernameError}>
-            <Input
+            <IconInput
+              icon={<UserRound />}
               id={usernameId}
               value={username}
               onChange={(e) => {
@@ -199,7 +207,8 @@ function EditProfileModal({ open, onClose, user, onSaved }: Props) {
             />
           </FormRow>
           <FormRow id={phoneId} label="Phone number" error={phoneError} hint="Include the country code, for example +234.">
-            <Input
+            <IconInput
+              icon={<Phone />}
               id={phoneId}
               type="tel"
               value={phone}

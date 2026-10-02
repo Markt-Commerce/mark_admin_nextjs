@@ -6,6 +6,10 @@ import {
   CircleDashed,
   LogOut,
   MailCheck,
+  CalendarDays,
+  MoreHorizontal,
+  Clock,
+  UserRound,
   Pencil,
   PlayCircle,
   Send,
@@ -17,11 +21,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { ActionDialog } from "@/components/patterns/action-dialog";
 import { DetailLayout } from "@/components/patterns/layout";
-import { ActionGroup, ProfileCard } from "@/components/patterns/profile-card";
+import { ProfileCard } from "@/components/patterns/profile-card";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge, MarketPill, RoleChip, SellingPill, UserStatusPill, VerificationPill } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { BackLink, Banner, Card, DetailList } from "@/components/ui/surface";
+import { Button, IconButton, circleIconClass } from "@/components/ui/button";
+import { BackLink, Banner, DetailList } from "@/components/ui/surface";
+import { DetailPanel, RecordFacts } from "@/components/patterns/detail-panel";
+import { CopyButton } from "@/components/ui/copy-button";
+import { Menu, type MenuSection } from "@/components/ui/menu";
 import { Tabs } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import { type AdminUserDetail, LIMITS } from "@/lib/api/types";
@@ -67,60 +74,26 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
     toast.success(message);
   };
 
-  const profileActions = allow("user.edit") && (
-    <ActionGroup label="Profile">
-      <Button fullWidth icon={<Pencil className="size-4" />} onClick={() => setOpen("edit")}>
-        Edit profile
-      </Button>
-    </ActionGroup>
-  );
-
-  const emailActions = allow("user.verify_email") && !user.email_verified && (
-    <ActionGroup label="Email">
-      <Button fullWidth icon={<MailCheck className="size-4" />} onClick={() => setOpen("verify-email")}>
-        Mark email as verified
-      </Button>
-      <Button fullWidth icon={<Send className="size-4" />} onClick={() => setOpen("resend")}>
-        Resend verification code
-      </Button>
-    </ActionGroup>
-  );
-
-  const roleActions = allow("user.manage_roles") && (
-    <ActionGroup label="Roles">
-      <Button fullWidth icon={<UserCog className="size-4" />} onClick={() => setOpen("roles")}>
-        Manage buyer and seller roles
-      </Button>
-    </ActionGroup>
-  );
-
-  const sessionActions = allow("user.force_logout") && (
-    <ActionGroup label="Sessions">
-      <Button fullWidth icon={<LogOut className="size-4" />} onClick={() => setOpen("force-logout")}>
-        Sign out everywhere
-      </Button>
-    </ActionGroup>
-  );
-
-  // Escalating severity: suspend (temporary hold), then ban (removal).
-  const canSuspend = allow("user.suspend") && !user.suspended_at && !user.banned_at;
-  const canBan = allow("user.ban") && !user.banned_at;
-  const accessActions = (canSuspend || canBan) && (
-    <ActionGroup label="Account access">
-      {canSuspend && (
-        <Button fullWidth variant="danger-outline" icon={<ShieldOff className="size-4" />} onClick={() => setOpen("suspend")}>
-          Suspend user
-        </Button>
-      )}
-      {canBan && (
-        <Button fullWidth variant="danger-outline" icon={<Ban className="size-4" />} onClick={() => setOpen("ban")}>
-          Ban user
-        </Button>
-      )}
-    </ActionGroup>
-  );
-
-  const anyAction = profileActions || emailActions || roleActions || sessionActions || accessActions;
+  const sections: MenuSection[] = [
+    { label: "Email", items: allow("user.verify_email") && !user.email_verified ? [
+      { label: "Mark email as verified", icon: <MailCheck />, onSelect: () => setOpen("verify-email") },
+      { label: "Resend verification code", icon: <Send />, onSelect: () => setOpen("resend") },
+    ] : [] },
+    { label: "Roles and sessions", items: [
+      ...(allow("user.manage_roles") ? [{ label: "Manage buyer and seller roles", icon: <UserCog />, onSelect: () => setOpen("roles") }] : []),
+      ...(allow("user.force_logout") ? [{ label: "Sign out everywhere", icon: <LogOut />, onSelect: () => setOpen("force-logout") }] : []),
+    ] },
+    { label: "Account access", items: [
+      ...(allow("user.suspend") && !user.suspended_at && !user.banned_at ? [{ label: "Suspend user", icon: <ShieldOff />, danger: true, onSelect: () => setOpen("suspend") }] : []),
+      ...(allow("user.ban") && !user.banned_at ? [{ label: "Ban user", icon: <Ban />, danger: true, onSelect: () => setOpen("ban") }] : []),
+    ] },
+  ];
+  const anyAction = allow("user.edit") || sections.some((section) => section.items.length > 0);
+  const identity = {
+    name,
+    subtitle: user.email,
+    avatar: <Avatar src={user.profile_picture} name={name} size="lg" />,
+  };
   const staffRole = roleLabel(user.admin_role);
 
   return (
@@ -144,13 +117,10 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
             }
             actions={
               anyAction ? (
-                <>
-                  {profileActions}
-                  {emailActions}
-                  {roleActions}
-                  {sessionActions}
-                  {accessActions}
-                </>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {allow("user.edit") && <IconButton shape="circle" label="Edit profile" icon={<Pencil className="size-4" />} onClick={() => setOpen("edit")} />}
+                  <Menu label="More user actions" trigger={<MoreHorizontal className="size-4" />} triggerClassName={circleIconClass} sections={sections} />
+                </div>
               ) : (
                 <p className="text-sm text-fg-muted">
                   {deleted
@@ -161,10 +131,16 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
                 </p>
               )
             }
-          />
+          >
+            <DetailList className="[&>div]:grid-cols-1 [&>div]:gap-1" items={[
+              { label: "Email", value: <span className="flex flex-wrap items-center">{user.email}<CopyButton value={user.email} label="email" /></span> },
+              { label: "Phone", value: user.phone_number },
+              { label: "Joined", value: formatDateTime(user.created_at) },
+            ]} />
+          </ProfileCard>
         }
         main={
-          <Card bodyClassName="pt-2">
+          <DetailPanel>
             <Tabs
               label="User information"
               items={[
@@ -172,7 +148,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
                 { id: "state", label: "Account state", content: <AccountState user={user} /> },
               ]}
             />
-          </Card>
+          </DetailPanel>
         }
         aside={
           <>
@@ -186,6 +162,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
       <ManageRolesDialog open={open === "roles"} onClose={close} user={user} onSaved={applied("Roles updated")} />
 
       <ActionDialog
+        identity={identity}
         open={open === "suspend"}
         onClose={close}
         title="Suspend user"
@@ -198,6 +175,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
         onSuccess={applied("User suspended")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "reinstate"}
         onClose={close}
         title="Reinstate user"
@@ -209,6 +187,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
         onSuccess={applied("Suspension lifted")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "ban"}
         onClose={close}
         title="Ban user"
@@ -221,6 +200,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
         onSuccess={applied("User banned")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "unban"}
         onClose={close}
         title="Unban user"
@@ -232,6 +212,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
         onSuccess={applied("Ban lifted")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "force-logout"}
         onClose={close}
         title="Sign out everywhere"
@@ -243,6 +224,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
         onSuccess={applied("All sessions ended")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "verify-email"}
         onClose={close}
         title="Mark email as verified"
@@ -252,6 +234,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
         onSuccess={applied("Email marked as verified")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "resend"}
         onClose={close}
         title="Resend verification code"
@@ -358,31 +341,24 @@ function AccountDetails({ user }: { user: AdminUserDetail }) {
 
 /** Each state with its own timestamp and reason; never merged into one. */
 function AccountState({ user }: { user: AdminUserDetail }) {
-  const yesNo = (on: boolean, yes: string) => (on ? yes : "No");
   return (
-    <DetailList
-      items={[
-        { label: "Overall status", value: <UserStatusPill status={user.status} /> },
-        { label: "Suspended", value: yesNo(!!user.suspended_at, `Since ${formatDateTime(user.suspended_at)}`) },
-        { label: "Suspension reason", value: user.suspension_reason },
-        { label: "Banned", value: yesNo(!!user.banned_at, `Since ${formatDateTime(user.banned_at)}`) },
-        { label: "Ban reason", value: user.ban_reason },
-        {
-          label: "Active (user's own setting)",
-          value: user.is_active ? "Yes" : `No, deactivated ${user.deactivated_at ? formatDateTime(user.deactivated_at) : ""}`.trim(),
-        },
-        { label: "Deleted", value: yesNo(!!user.deleted_at, `On ${formatDateTime(user.deleted_at)}`) },
-      ]}
-    />
+    <RecordFacts items={[
+      { label: "Account created", icon: <CalendarDays />, value: formatDateTime(user.created_at) },
+      { label: "Last sign-in", icon: <Clock />, value: formatDateTime(user.last_login_at) ?? "This user has not signed in yet." },
+      { label: "Suspension", icon: <ShieldOff />, value: user.suspended_at ? `Suspended on ${formatDateTime(user.suspended_at)}` : "No suspension", note: user.suspension_reason },
+      { label: "Ban", icon: <Ban />, value: user.banned_at ? `Banned on ${formatDateTime(user.banned_at)}` : "No ban", note: user.ban_reason },
+      { label: "User's account setting", icon: <UserRound />, value: user.is_active ? "Active" : user.deactivated_at ? `Deactivated on ${formatDateTime(user.deactivated_at)}` : "Deactivated" },
+      ...(user.deleted_at ? [{ label: "Account deleted", icon: <UserRound />, value: formatDateTime(user.deleted_at) }] : []),
+    ]} />
   );
 }
 
 function BuyerPanel({ user }: { user: AdminUserDetail }) {
   const buyer = user.buyer;
   return (
-    <Card title="Buyer profile">
+    <DetailPanel title="Buyer profile">
       {buyer ? (
-        <DetailList
+        <DetailList className="[&>div]:grid-cols-1 [&>div]:gap-1"
           items={[
             { label: "Buyer name", value: buyer.buyername },
             { label: "Profile", value: buyer.is_active ? <Badge tone="success" shape="chip">Active</Badge> : <Badge tone="neutral" shape="chip">Turned off</Badge> },
@@ -392,14 +368,14 @@ function BuyerPanel({ user }: { user: AdminUserDetail }) {
       ) : (
         <p className="text-sm text-fg-muted">This account has no buyer profile.</p>
       )}
-    </Card>
+    </DetailPanel>
   );
 }
 
 function SellerPanel({ user, canViewSellers }: { user: AdminUserDetail; canViewSellers: boolean }) {
   const seller = user.seller;
   return (
-    <Card
+    <DetailPanel
       title="Seller profile"
       actions={
         seller && canViewSellers ? (
@@ -413,7 +389,7 @@ function SellerPanel({ user, canViewSellers }: { user: AdminUserDetail; canViewS
       }
     >
       {seller ? (
-        <DetailList
+        <DetailList className="[&>div]:grid-cols-1 [&>div]:gap-1"
           items={[
             { label: "Shop", value: seller.shop_name },
             { label: "Shop handle", value: seller.shop_slug && <span className="font-mono text-xs">{seller.shop_slug}</span> },
@@ -425,6 +401,6 @@ function SellerPanel({ user, canViewSellers }: { user: AdminUserDetail; canViewS
       ) : (
         <p className="text-sm text-fg-muted">This account has no seller profile.</p>
       )}
-    </Card>
+    </DetailPanel>
   );
 }

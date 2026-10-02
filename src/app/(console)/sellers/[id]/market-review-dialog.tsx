@@ -2,7 +2,9 @@
 
 import { useId, useState } from "react";
 import { ActionDialog } from "@/components/patterns/action-dialog";
-import { Field, Select } from "@/components/ui/field";
+import { Avatar } from "@/components/ui/avatar";
+import { FormRow } from "@/components/patterns/form-row";
+import { describedBy, Select } from "@/components/ui/field";
 import { type AdminSellerDetail, LIMITS, MARKET_STATUSES, type MarketStatus } from "@/lib/api/types";
 import { MARKET_STATUS } from "@/lib/status";
 import { reviewMarket } from "./actions";
@@ -29,6 +31,7 @@ function MarketReviewModal({ onClose, seller, onSaved }: Props) {
       open
       onClose={onClose}
       title="Review market check"
+      identity={{ name: seller.shop_name ?? `Seller ${seller.id}`, subtitle: seller.shop_slug, avatar: <Avatar name={seller.shop_name ?? `Seller ${seller.id}`} size="lg" /> }}
       description={
         <>
           Set whether <strong>{seller.shop_name ?? `seller ${seller.id}`}</strong>&apos;s location matches the market it
@@ -40,8 +43,8 @@ function MarketReviewModal({ onClose, seller, onSaved }: Props) {
       onConfirm={(reason) => reviewMarket(seller.id, status, reason)}
       onSuccess={onSaved}
     >
-      <Field id={selectId} label="Market status" hint={MARKET_STATUS[status].description}>
-        <Select id={selectId} value={status} onChange={(e) => setStatus(e.target.value as MarketStatus)}>
+      <FormRow id={selectId} label="Market status" hint={MARKET_STATUS[status].description}>
+        <Select data-autofocus {...describedBy(selectId, { hint: true })} id={selectId} value={status} onChange={(e) => setStatus(e.target.value as MarketStatus)}>
           {MARKET_STATUSES.map((s) => (
             <option key={s} value={s}>
               {MARKET_STATUS[s].label}
@@ -49,7 +52,7 @@ function MarketReviewModal({ onClose, seller, onSaved }: Props) {
             </option>
           ))}
         </Select>
-      </Field>
+      </FormRow>
     </ActionDialog>
   );
 }

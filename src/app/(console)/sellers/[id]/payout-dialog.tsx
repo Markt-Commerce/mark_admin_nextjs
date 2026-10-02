@@ -1,10 +1,12 @@
 "use client";
 
+import { Landmark, Hash, UserRound } from "lucide-react";
+import { Avatar } from "@/components/ui/avatar";
 import { useId, useState, useTransition } from "react";
 import { AuditNotice } from "@/components/patterns/action-dialog";
 import { FormRow } from "@/components/patterns/form-row";
 import { Button } from "@/components/ui/button";
-import { describedBy, Input } from "@/components/ui/field";
+import { describedBy, IconInput } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Banner } from "@/components/ui/surface";
 import type { ApiError } from "@/lib/api/errors";
@@ -67,6 +69,7 @@ function PayoutModal({ onClose, seller, onSaved }: Props) {
       onClose={onClose}
       busy={pending}
       title="Edit payout details"
+      identity={{ name: seller.shop_name ?? `Seller ${seller.id}`, subtitle: seller.shop_slug, avatar: <Avatar name={seller.shop_name ?? `Seller ${seller.id}`} size="lg" /> }}
       description={<>Bank account that {seller.shop_name ?? `seller ${seller.id}`}&apos;s earnings are paid into.</>}
       footer={
         <>
@@ -98,7 +101,8 @@ function PayoutModal({ onClose, seller, onSaved }: Props) {
               (values[f.key].trim().length > f.max ? `${f.label} can be up to ${f.max} characters.` : undefined);
             return (
               <FormRow key={f.key} id={id} label={f.label} hint={f.hint} error={fieldError}>
-                <Input
+                <IconInput
+                  icon={f.key === "payout_bank_code" ? <Landmark /> : f.key === "payout_account_number" ? <Hash /> : <UserRound />}
                   id={id}
                   value={values[f.key]}
                   onChange={(e) => {

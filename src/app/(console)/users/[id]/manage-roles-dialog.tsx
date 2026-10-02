@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { AuditNotice } from "@/components/patterns/action-dialog";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Toggle } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
@@ -61,6 +62,7 @@ function ManageRolesModal({ open, onClose, user, onSaved }: Props) {
       onClose={onClose}
       busy={pending}
       title="Manage buyer and seller roles"
+      identity={{ name: user.username ?? user.email, subtitle: user.email, avatar: <Avatar src={user.profile_picture} name={user.username ?? user.email} size="lg" /> }}
       description={<>Turn {user.email}&apos;s buyer and seller roles on or off.</>}
       footer={
         <>

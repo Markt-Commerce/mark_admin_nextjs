@@ -1,12 +1,14 @@
 "use client";
 
-import { Ban, Pencil, ShieldCheck } from "lucide-react";
-import { useId, useState } from "react";
+import { Ban, Pencil, ShieldCheck, MoreHorizontal, Phone, UserRound } from "lucide-react";
+import { useId, useRef, useState } from "react";
 import { ActionDialog } from "@/components/patterns/action-dialog";
 import { FormRow } from "@/components/patterns/form-row";
 import { Avatar } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { describedBy, Input } from "@/components/ui/field";
+import { Button, IconButton, circleIconClass } from "@/components/ui/button";
+import { describedBy, IconInput } from "@/components/ui/field";
+import { CopyButton } from "@/components/ui/copy-button";
+import { Menu } from "@/components/ui/menu";
 import { Modal } from "@/components/ui/modal";
 import { Tabs } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
@@ -22,6 +24,8 @@ const SAMPLE_ME = {
   admin_role: "support",
   permissions: [],
 };
+
+const identity = { name: "ada_0", subtitle: "ada@example.test", avatar: <Avatar name="Ada Lovelace" size="lg" /> };
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
@@ -59,6 +63,7 @@ export function DialogDemos() {
       <EditDemo open={open === "edit"} onClose={close} />
 
       <ActionDialog
+        identity={identity}
         open={open === "optional"}
         onClose={close}
         title="Ban user"
@@ -71,6 +76,7 @@ export function DialogDemos() {
         onSuccess={done("User banned")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "required"}
         onClose={close}
         title="Reject verification"
@@ -82,6 +88,7 @@ export function DialogDemos() {
         onSuccess={done("Verification rejected")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "confirm"}
         onClose={close}
         title="Mark email as verified"
@@ -91,6 +98,7 @@ export function DialogDemos() {
         onSuccess={done("Email marked as verified")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "error"}
         onClose={close}
         title="Suspend user"
@@ -107,6 +115,8 @@ export function DialogDemos() {
 
 function EditDemo({ open, onClose }: { open: boolean; onClose: () => void }) {
   const phoneId = useId();
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [filename, setFilename] = useState<string>();
   const userId = useId();
   const [pending, setPending] = useState(false);
   const toast = useToast();
@@ -116,6 +126,7 @@ function EditDemo({ open, onClose }: { open: boolean; onClose: () => void }) {
       onClose={onClose}
       busy={pending}
       title="Edit profile"
+      identity={{ ...identity, actions: <CopyButton value="ada@example.test" label="email" variant="button" /> }}
       description="Correct this user's contact details. Changes are recorded in the audit log."
       footer={
         <>
@@ -142,14 +153,16 @@ function EditDemo({ open, onClose }: { open: boolean; onClose: () => void }) {
         <FormRow label="Profile photo">
           <div className="flex items-center gap-4">
             <Avatar name="Ada Lovelace" size="lg" />
-            <Button>Upload new photo</Button>
+            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" aria-label="Choose a demo photo" onChange={(e) => setFilename(e.target.files?.[0]?.name)} />
+            <Button onClick={() => fileRef.current?.click()}>Click to replace</Button>
           </div>
+          {filename && <p className="text-sm text-fg-muted">Selected: {filename}. This demo does not upload files.</p>}
         </FormRow>
         <FormRow id={userId} label="Username">
-          <Input id={userId} defaultValue="ada_0" />
+          <IconInput icon={<UserRound />} id={userId} defaultValue="ada_0" />
         </FormRow>
         <FormRow id={phoneId} label="Phone number" error="Phone number must be 20 characters or fewer.">
-          <Input id={phoneId} defaultValue="+234 800 000 0000 0000" {...describedBy(phoneId, { error: true })} />
+          <IconInput icon={<Phone />} id={phoneId} defaultValue="+234 800 000 0000 0000" {...describedBy(phoneId, { error: true })} />
         </FormRow>
       </div>
     </Modal>
@@ -178,5 +191,22 @@ export function TabsDemo() {
         { id: "seller", label: "Seller profile", content: <p className="text-sm">Seller panel.</p> },
       ]}
     />
+  );
+}
+
+/** The persistent menu trigger receives focus again when a dialog closes. */
+export function RecordActionsDemo() {
+  const [open, setOpen] = useState<"edit" | "suspend" | null>(null);
+  return (
+    <>
+      <div className="flex justify-center gap-2">
+        <IconButton shape="circle" label="Edit demo profile" icon={<Pencil className="size-4" />} onClick={() => setOpen("edit")} />
+        <Menu label="More demo actions" trigger={<MoreHorizontal className="size-4" />} triggerClassName={circleIconClass} sections={[
+          { label: "Account access", items: [{ label: "Suspend user", icon: <Ban />, danger: true, onSelect: () => setOpen("suspend") }] },
+        ]} />
+      </div>
+      <EditDemo open={open === "edit"} onClose={() => setOpen(null)} />
+      <ActionDialog open={open === "suspend"} onClose={() => setOpen(null)} identity={identity} title="Suspend user" description="A demonstration only; no account is changed." confirmLabel="Suspend user" tone="danger" reason={{ mode: "optional", maxLength: 255 }} onConfirm={() => simulate("ok")} onSuccess={() => {}} />
+    </>
   );
 }

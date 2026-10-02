@@ -2,9 +2,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { DetailPanel, RecordFacts } from "@/components/patterns/detail-panel";
+import { CopyButton } from "@/components/ui/copy-button";
 import { DetailLayout, PageHeader } from "@/components/patterns/layout";
 import { MaskedValue } from "@/components/patterns/masked-value";
-import { ActionGroup, ProfileCard } from "@/components/patterns/profile-card";
+import { ProfileCard } from "@/components/patterns/profile-card";
 import { Avatar } from "@/components/ui/avatar";
 import {
   Badge,
@@ -24,7 +26,7 @@ import { BackLink, Banner, Card, DetailList, Skeleton, Tooltip } from "@/compone
 import { type Column, DataTable, TableSkeleton } from "@/components/ui/table";
 import { MARKET_STATUSES, SELLER_VERIFICATION_STATUSES, USER_STATUSES } from "@/lib/api/types";
 import { Ban, CircleHelp, Pencil, Trash2 } from "lucide-react";
-import { DialogDemos, TabsDemo, ToastDemos } from "./demos";
+import { DialogDemos, RecordActionsDemo, TabsDemo, ToastDemos } from "./demos";
 
 export const metadata: Metadata = { title: "Design system" };
 
@@ -347,31 +349,21 @@ export default async function DesignSystemPage({ searchParams }: PageProps<"/des
                   <RoleChip>Buyer</RoleChip>
                 </>
               }
-              actions={
-                <>
-                  <ActionGroup label="Profile">
-                    <Button fullWidth icon={<Pencil className="size-4" />}>
-                      Edit profile
-                    </Button>
-                  </ActionGroup>
-                  <ActionGroup label="Account access">
-                    <Button fullWidth variant="danger-outline">
-                      Suspend user
-                    </Button>
-                  </ActionGroup>
-                </>
-              }
+              actions={<RecordActionsDemo />}
             />
           }
           main={
-            <Card title="Main column">
-              <p className="text-sm text-fg-muted">Tabs and the main record go here.</p>
-            </Card>
+            <DetailPanel title="Account state">
+              <RecordFacts items={[
+                { label: "Email verified", icon: <CircleHelp />, value: "Verified" },
+                { label: "Suspension", icon: <Ban />, value: "No suspension" },
+              ]} />
+            </DetailPanel>
           }
           aside={
-            <Card title="Side panel">
-              <p className="text-sm text-fg-muted">Sub-profiles and related records.</p>
-            </Card>
+            <DetailPanel title="Buyer profile">
+              <DetailList items={[{ label: "Name", value: "Ada Lovelace" }, { label: "Email", value: <span className="flex flex-wrap items-center">ada@example.test<CopyButton value="ada@example.test" label="sample email" /></span> }]} />
+            </DetailPanel>
           }
         />
       </Section>

@@ -1,17 +1,19 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element -- shop banners come from arbitrary CDN hosts */
-import { ExternalLink, MapPinned, PauseCircle, PlayCircle, ShieldCheck, ShieldX, Star, StarOff, Wallet } from "lucide-react";
+import { ExternalLink, MoreHorizontal, MapPinned, PauseCircle, PlayCircle, ShieldCheck, ShieldX, Star, StarOff, Wallet } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ActionDialog } from "@/components/patterns/action-dialog";
 import { DetailLayout } from "@/components/patterns/layout";
 import { MaskedValue } from "@/components/patterns/masked-value";
-import { ActionGroup, ProfileCard } from "@/components/patterns/profile-card";
+import { ProfileCard } from "@/components/patterns/profile-card";
 import { Avatar } from "@/components/ui/avatar";
 import { FeaturedMark, MarketPill, SellingPill, VerificationPill } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { BackLink, Banner, Card, DetailList } from "@/components/ui/surface";
+import { Button, IconButton, circleIconClass } from "@/components/ui/button";
+import { BackLink, Banner, DetailList } from "@/components/ui/surface";
+import { DetailPanel, RecordFacts } from "@/components/patterns/detail-panel";
+import { Menu, type MenuSection } from "@/components/ui/menu";
 import { Tabs } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/toast";
 import { type AdminSellerDetail, LIMITS } from "@/lib/api/types";
@@ -39,63 +41,24 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
     toast.success(message);
   };
 
-  // Axis 1: verification.
-  const canVerify = can(me, "seller.verify");
-  const verificationActions = canVerify && (
-    <ActionGroup label="Verification">
-      {seller.verification_status !== "verified" && (
-        <Button fullWidth variant="primary" icon={<ShieldCheck className="size-4" />} onClick={() => setOpen("verify")}>
-          Verify seller
-        </Button>
-      )}
-      {seller.verification_status !== "rejected" && (
-        <Button fullWidth variant="danger-outline" icon={<ShieldX className="size-4" />} onClick={() => setOpen("reject")}>
-          Reject verification
-        </Button>
-      )}
-    </ActionGroup>
-  );
-
-  // Axis 2: market check.
-  const marketActions = can(me, "seller.market_review") && (
-    <ActionGroup label="Market check">
-      <Button fullWidth icon={<MapPinned className="size-4" />} onClick={() => setOpen("market")}>
-        Review market check
-      </Button>
-    </ActionGroup>
-  );
-
-  // Axis 3a: can the shop sell. This targets the shop, not the owner's login.
-  const sellingActions = can(me, "seller.suspend") && (
-    <ActionGroup label="Selling">
-      {seller.is_active ? (
-        <Button fullWidth variant="danger-outline" icon={<PauseCircle className="size-4" />} onClick={() => setOpen("suspend")}>
-          Suspend shop
-        </Button>
-      ) : (
-        <Button fullWidth icon={<PlayCircle className="size-4" />} onClick={() => setOpen("unsuspend")}>
-          Unsuspend shop
-        </Button>
-      )}
-    </ActionGroup>
-  );
-
-  // Axis 3b: promotion.
-  const promotionActions = can(me, "seller.feature") && (
-    <ActionGroup label="Promotion">
-      {seller.is_featured ? (
-        <Button fullWidth icon={<StarOff className="size-4" />} onClick={() => setOpen("unfeature")}>
-          Remove from featured
-        </Button>
-      ) : (
-        <Button fullWidth icon={<Star className="size-4" />} onClick={() => setOpen("feature")}>
-          Feature shop
-        </Button>
-      )}
-    </ActionGroup>
-  );
-
-  const anyAction = verificationActions || marketActions || sellingActions || promotionActions;
+  const canVerify = can(me, "seller.verify") && seller.verification_status !== "verified";
+  const sections: MenuSection[] = [
+    { label: "Verification", items: can(me, "seller.verify") && seller.verification_status !== "rejected" ? [
+      { label: "Reject verification", icon: <ShieldX />, danger: true, onSelect: () => setOpen("reject") },
+    ] : [] },
+    { label: "Selling", items: can(me, "seller.suspend") ? [
+      seller.is_active
+        ? { label: "Suspend shop", icon: <PauseCircle />, danger: true, onSelect: () => setOpen("suspend") }
+        : { label: "Unsuspend shop", icon: <PlayCircle />, onSelect: () => setOpen("unsuspend") },
+    ] : [] },
+    { label: "Promotion", items: can(me, "seller.feature") ? [
+      seller.is_featured
+        ? { label: "Remove from featured", icon: <StarOff />, onSelect: () => setOpen("unfeature") }
+        : { label: "Feature shop", icon: <Star />, onSelect: () => setOpen("feature") },
+    ] : [] },
+  ];
+  const anyAction = canVerify || can(me, "seller.market_review") || can(me, "seller.edit_payout") || sections.some((section) => section.items.length > 0);
+  const identity = { name, subtitle: seller.shop_slug, avatar: <Avatar name={name} size="lg" /> };
   const canSeeOwner = can(me, "user.view");
 
   return (
@@ -125,10 +88,12 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
             actions={
               anyAction ? (
                 <>
-                  {verificationActions}
-                  {marketActions}
-                  {sellingActions}
-                  {promotionActions}
+                  <div className="flex flex-wrap justify-center gap-2">
+                    {can(me, "seller.market_review") && <IconButton shape="circle" label="Review market check" icon={<MapPinned className="size-4" />} onClick={() => setOpen("market")} />}
+                    {can(me, "seller.edit_payout") && <IconButton shape="circle" label="Edit payout" icon={<Wallet className="size-4" />} onClick={() => setOpen("payout")} />}
+                    <Menu label="More shop actions" trigger={<MoreHorizontal className="size-4" />} triggerClassName={circleIconClass} sections={sections} />
+                  </div>
+                  {canVerify && <Button fullWidth variant="primary" icon={<ShieldCheck className="size-4" />} onClick={() => setOpen("verify")}>Verify seller</Button>}
                 </>
               ) : (
                 <p className="text-sm text-fg-muted">Your role has no actions for this shop.</p>
@@ -137,7 +102,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
           />
         }
         main={
-          <Card bodyClassName="pt-2">
+          <DetailPanel>
             <Tabs
               label="Shop information"
               items={[
@@ -145,7 +110,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
                 { id: "verification", label: "Verification", content: <VerificationDetails seller={seller} /> },
               ]}
             />
-          </Card>
+          </DetailPanel>
         }
         aside={
           <>
@@ -157,6 +122,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
       />
 
       <ActionDialog
+        identity={identity}
         open={open === "verify"}
         onClose={close}
         title="Verify seller"
@@ -167,6 +133,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
         onSuccess={applied("Seller verified")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "reject"}
         onClose={close}
         title="Reject verification"
@@ -178,6 +145,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
         onSuccess={applied("Verification rejected")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "suspend"}
         onClose={close}
         title="Suspend shop"
@@ -190,6 +158,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
         onSuccess={applied("Shop suspended")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "unsuspend"}
         onClose={close}
         title="Unsuspend shop"
@@ -200,6 +169,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
         onSuccess={applied("Shop can sell again")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "feature"}
         onClose={close}
         title="Feature shop"
@@ -210,6 +180,7 @@ export function SellerDetailView({ initialSeller }: { initialSeller: AdminSeller
         onSuccess={applied("Shop featured")}
       />
       <ActionDialog
+        identity={identity}
         open={open === "unfeature"}
         onClose={close}
         title="Remove from featured"
@@ -323,21 +294,18 @@ function Policies({ value }: { value: unknown }) {
 
 function VerificationDetails({ seller }: { seller: AdminSellerDetail }) {
   return (
-    <DetailList
-      items={[
-        { label: "Verification", value: <VerificationPill status={seller.verification_status} /> },
-        { label: "Latest note", value: seller.verification_note },
-        { label: "Market check", value: <MarketPill status={seller.market_verification_status} /> },
-        { label: "Selling", value: <SellingPill active={seller.is_active} /> },
-        { label: "Featured", value: <FeaturedMark featured={seller.is_featured} withLabel /> },
-      ]}
-    />
+    <RecordFacts items={[
+      { label: "Seller verification", icon: <ShieldCheck />, value: <VerificationPill status={seller.verification_status} />, note: seller.verification_note },
+      { label: "Market check", icon: <MapPinned />, value: <MarketPill status={seller.market_verification_status} /> },
+      { label: "Selling", icon: <PlayCircle />, value: <SellingPill active={seller.is_active} /> },
+      { label: "Promotion", icon: <Star />, value: <FeaturedMark featured={seller.is_featured} withLabel /> },
+    ]} />
   );
 }
 
 function OwnerCard({ seller, canSeeOwner }: { seller: AdminSellerDetail; canSeeOwner: boolean }) {
   return (
-    <Card
+    <DetailPanel
       title="Owner"
       actions={
         seller.user_id && canSeeOwner ? (
@@ -350,14 +318,14 @@ function OwnerCard({ seller, canSeeOwner }: { seller: AdminSellerDetail; canSeeO
         ) : undefined
       }
     >
-      <DetailList
+      <DetailList className="[&>div]:grid-cols-1 [&>div]:gap-1"
         items={[
           { label: "Username", value: seller.username },
           { label: "Email", value: seller.email },
           { label: "User ID", value: seller.user_id && <span className="font-mono">{seller.user_id}</span> },
         ]}
       />
-    </Card>
+    </DetailPanel>
   );
 }
 
@@ -369,7 +337,7 @@ function PayoutCard({ seller, canEdit, onEdit }: { seller: AdminSellerDetail; ca
   const payout = seller.payout;
   const number = payout?.account_number ?? null;
   return (
-    <Card
+    <DetailPanel
       title="Payout"
       description="Where this shop's earnings are paid."
       actions={
@@ -380,7 +348,7 @@ function PayoutCard({ seller, canEdit, onEdit }: { seller: AdminSellerDetail; ca
         ) : undefined
       }
     >
-      <DetailList
+      <DetailList className="[&>div]:grid-cols-1 [&>div]:gap-1"
         items={[
           { label: "Bank code", value: payout?.bank_code },
           {
@@ -395,7 +363,7 @@ function PayoutCard({ seller, canEdit, onEdit }: { seller: AdminSellerDetail; ca
           { label: "Paystack subaccount", value: payout?.paystack_subaccount_code && <span className="font-mono text-xs">{payout.paystack_subaccount_code}</span> },
         ]}
       />
-    </Card>
+    </DetailPanel>
   );
 }
 
@@ -406,8 +374,8 @@ function MarketCard({ seller }: { seller: AdminSellerDetail }) {
   const lng = market?.shop_longitude;
   const hasCoords = typeof lat === "number" && typeof lng === "number";
   return (
-    <Card title="Market and location">
-      <DetailList
+    <DetailPanel title="Market and location">
+      <DetailList className="[&>div]:grid-cols-1 [&>div]:gap-1"
         items={[
           { label: "Market ID", value: market?.market_id != null ? <span className="font-mono">{market.market_id}</span> : null },
           { label: "Address", value: address.line },
@@ -431,6 +399,6 @@ function MarketCard({ seller }: { seller: AdminSellerDetail }) {
           <span className="sr-only">(opens in a new tab)</span>
         </a>
       )}
-    </Card>
+    </DetailPanel>
   );
 }

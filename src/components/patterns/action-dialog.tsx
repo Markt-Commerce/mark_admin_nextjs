@@ -3,8 +3,9 @@
 import { ScrollText } from "lucide-react";
 import { type ReactNode, useId, useState, useTransition } from "react";
 import { Button } from "@/components/ui/button";
-import { describedBy, Field, Textarea } from "@/components/ui/field";
-import { Modal } from "@/components/ui/modal";
+import { describedBy, Textarea } from "@/components/ui/field";
+import { Modal, type ModalIdentity } from "@/components/ui/modal";
+import { FormRow } from "./form-row";
 import { Banner } from "@/components/ui/surface";
 import type { ApiError, ApiResult } from "@/lib/api/errors";
 import { useMe } from "@/lib/me-context";
@@ -57,6 +58,7 @@ export function ActionDialog<T>({
   children,
   onConfirm,
   onSuccess,
+  identity,
 }: {
   open: boolean;
   onClose: () => void;
@@ -73,6 +75,7 @@ export function ActionDialog<T>({
   children?: ReactNode;
   onConfirm: (reason: string | undefined) => Promise<ApiResult<T>>;
   onSuccess: (data: T) => void;
+  identity?: ModalIdentity;
 }) {
   const [text, setText] = useState("");
   const [error, setError] = useState<ApiError | null>(null);
@@ -113,6 +116,7 @@ export function ActionDialog<T>({
       open={open}
       onClose={close}
       title={title}
+      identity={identity}
       description={description}
       busy={pending}
       footer={
@@ -145,14 +149,12 @@ export function ActionDialog<T>({
         )}
         {children}
         {reason && (
-          <Field
+          <FormRow
             id={fieldId}
-            label={reason.label ?? "Reason"}
+            label={<>{reason.label ?? "Reason"}{reason.mode === "optional" && <span className="font-normal text-fg-muted"> (optional)</span>}</>}
             required={reason.mode === "required"}
-            optional={reason.mode === "optional"}
             hint={reason.hint}
             error={fieldError}
-            counter={`${text.length} / ${reason.maxLength}`}
           >
             <Textarea
               id={fieldId}
@@ -164,7 +166,8 @@ export function ActionDialog<T>({
               aria-required={reason.mode === "required"}
               {...describedBy(fieldId, { hint: reason.hint, error: fieldError })}
             />
-          </Field>
+            <p className="text-right text-xs text-fg-muted tabular-nums">{text.length} / {reason.maxLength}</p>
+          </FormRow>
         )}
         {error && !apiFieldError && (
           <Banner tone="danger" title={`Couldn't ${confirmLabel.toLowerCase()}`}>

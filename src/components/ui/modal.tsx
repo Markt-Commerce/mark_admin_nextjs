@@ -1,9 +1,14 @@
 "use client";
 
-import { X } from "lucide-react";
 import { type ReactNode, useEffect, useId, useRef } from "react";
 import { cn } from "@/lib/cn";
-import { IconButton } from "./button";
+
+export interface ModalIdentity {
+  name: string;
+  subtitle?: string | null;
+  avatar: ReactNode;
+  actions?: ReactNode;
+}
 
 /**
  * The one popup shell every dialog uses. Built on the native <dialog> in
@@ -23,6 +28,7 @@ export function Modal({
   footer,
   size = "md",
   busy,
+  identity,
 }: {
   open: boolean;
   onClose: () => void;
@@ -32,7 +38,8 @@ export function Modal({
   /** Buttons, right-aligned: Cancel first, then the action. */
   footer?: ReactNode;
   size?: "sm" | "md" | "lg";
-  /** While a request is in flight, Escape and the close button do nothing. */
+  identity?: ModalIdentity;
+  /** While a request is in flight, Escape does nothing. */
   busy?: boolean;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
@@ -46,7 +53,7 @@ export function Modal({
     if (open && !dialog.open) {
       returnFocus.current = document.activeElement as HTMLElement | null;
       dialog.showModal();
-      // showModal() focuses the first focusable element (the close button).
+      // showModal() focuses the first focusable element.
       // Content can ask for a better starting point with data-autofocus.
       dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
     } else if (!open && dialog.open) {
@@ -83,9 +90,20 @@ export function Modal({
       )}
     >
       {open && (
-        <div className="flex max-h-[calc(100dvh-4rem)] flex-col">
-          <header className="flex items-start justify-between gap-4 border-b border-border px-6 pt-5 pb-4">
-            <div className="min-w-0">
+        <div className="flex max-h-[calc(100dvh-4rem)] flex-col overflow-y-auto">
+          <div aria-hidden className="h-20 shrink-0 rounded-t-xl border-b border-border bg-surface-muted" />
+          <header className="shrink-0 border-b border-border px-6 pb-4">
+            {identity && (
+              <>
+                <div className="-mt-9 mb-3 flex flex-wrap items-end justify-between gap-3">
+                  <div className="rounded-full bg-surface p-1 ring-1 ring-border">{identity.avatar}</div>
+                  {identity.actions && <div className="flex flex-wrap gap-2 pt-10">{identity.actions}</div>}
+                </div>
+                <p className="text-base font-semibold break-words">{identity.name}</p>
+                {identity.subtitle && <p className="mt-0.5 text-sm break-words text-fg-muted">{identity.subtitle}</p>}
+              </>
+            )}
+            <div className="min-w-0 pt-4">
               <h2 id={titleId} className="text-lg font-semibold">
                 {title}
               </h2>
@@ -95,11 +113,10 @@ export function Modal({
                 </p>
               )}
             </div>
-            <IconButton label="Close" icon={<X className="size-5" />} onClick={onClose} disabled={busy} className="-mt-1 -mr-2" />
           </header>
-          <div className="overflow-y-auto px-6 py-5">{children}</div>
+          <div className="px-6 py-5">{children}</div>
           {footer && (
-            <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-border px-6 py-4">{footer}</footer>
+            <footer className="sticky bottom-0 flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-border bg-surface px-6 py-4">{footer}</footer>
           )}
         </div>
       )}
