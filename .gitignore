@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local planning, audits, and agent instructions. Keep the project README public.
+*.md
+!/README.md

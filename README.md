@@ -26,8 +26,5 @@ The staff console for Markt: seller verification, customer account management an
 - **Design system.** Tokens live in `src/app/globals.css`, components in `src/components/ui`, and patterns in `src/components/patterns`. Run the dev server and open `/design-system` to browse them. That route is development only.
 - **Mutations.** These are Server Actions next to each page (`actions.ts`). Each one returns the API's fresh record, and the page re-renders from it.
 
-## Docs
-
-- `docs/PHASE_0_AUDIT.md`: the audit and the owner's decisions.
-- `docs/BUILD_NOTES.md`: what each phase built, what it uses, and what was flagged.
-- `docs/BACKEND_CHANGES.md`: backend changes, written for the backend team.
+Planning briefs, audits, and agent instructions are maintained locally and are
+not included in this repository.
