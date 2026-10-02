@@ -15,7 +15,7 @@ export interface NavItem {
 export function NavLinks({ items, orientation }: { items: NavItem[]; orientation: "vertical" | "horizontal" }) {
   const pathname = usePathname();
   return (
-    <ul className={cn("flex gap-1", orientation === "vertical" ? "flex-col" : "flex-row overflow-x-auto")}>
+    <ul className={cn("flex gap-1", orientation === "vertical" ? "flex-col" : "flex-row overflow-x-auto overflow-y-hidden")}>
       {items.map((item) => {
         const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
         return (

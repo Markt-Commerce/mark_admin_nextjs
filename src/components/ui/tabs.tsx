@@ -39,7 +39,7 @@ export function Tabs({ items, defaultTab, label }: { items: TabItem[]; defaultTa
 
   return (
     <div>
-      <div role="tablist" aria-label={label} className="flex gap-1 overflow-x-auto border-b border-border">
+      <div role="tablist" aria-label={label} className="flex flex-wrap gap-1 border-b border-border">
         {items.map((item, i) => {
           const isSelected = item.id === selected;
           return (
