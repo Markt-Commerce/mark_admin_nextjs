@@ -24,6 +24,7 @@ export function DataTable<T>({
   empty,
   error,
   minWidth = "64rem",
+  stickyLastColumn,
 }: {
   /** Read by screen readers; describe what the table lists. */
   caption: string;
@@ -34,19 +35,31 @@ export function DataTable<T>({
   /** When set, the error state replaces the rows. */
   error?: { message: string; action?: ReactNode };
   minWidth?: string;
+  /** Keep the last column (row actions) in view while the table scrolls. */
+  stickyLastColumn?: boolean;
 }) {
+  const sticky = (i: number) =>
+    stickyLastColumn && i === columns.length - 1
+      ? "sticky right-0 shadow-[-12px_0_12px_-12px_rgb(16_24_40/0.18)]"
+      : undefined;
   return (
     <div className="overflow-hidden rounded-lg border border-border bg-surface shadow-card">
-      <div className="overflow-x-auto">
+      {/* relative: keeps sr-only (absolutely positioned) labels inside the
+          scroll box, so they can't widen the page. */}
+      <div className="relative overflow-x-auto">
         <table className="w-full border-collapse text-left text-sm" style={{ minWidth }}>
           <caption className="sr-only">{caption}</caption>
           <thead className="bg-surface-muted">
             <tr>
-              {columns.map((col) => (
+              {columns.map((col, i) => (
                 <th
                   key={col.key}
                   scope="col"
-                  className={cn("border-b border-border px-4 py-3 text-xs font-semibold text-fg-muted", col.className)}
+                  className={cn(
+                    "border-b border-border bg-surface-muted px-4 py-3 text-xs font-semibold text-fg-muted",
+                    sticky(i),
+                    col.className,
+                  )}
                 >
                   {col.header}
                 </th>
@@ -56,9 +69,12 @@ export function DataTable<T>({
           <tbody>
             {!error &&
               rows.map((row) => (
-                <tr key={rowKey(row)} className="border-b border-border last:border-0 hover:bg-surface-hover/60">
-                  {columns.map((col) => (
-                    <td key={col.key} className={cn("px-4 py-3 align-middle", col.className)}>
+                <tr key={rowKey(row)} className="group border-b border-border last:border-0">
+                  {columns.map((col, i) => (
+                    <td
+                      key={col.key}
+                      className={cn("bg-surface px-4 py-3 align-middle group-hover:bg-surface-hover", sticky(i), col.className)}
+                    >
                       {col.cell(row)}
                     </td>
                   ))}

@@ -31,7 +31,7 @@ export function AppShell({ me, children }: { me: AdminMe; children: ReactNode })
       </a>
 
       <header className="sticky top-0 z-30 flex h-topbar items-center gap-4 border-b border-border bg-surface px-4 lg:px-6">
-        <Link href="/" className="flex shrink-0 items-center gap-3 rounded-md">
+        <Link href="/" className="flex min-h-control shrink-0 items-center gap-3 rounded-md">
           <img src="/brand/markt-logo.svg" alt="Markt" className="h-7 w-auto" />
           <span className="hidden text-sm font-semibold text-fg-muted sm:inline">Staff console</span>
         </Link>
@@ -61,7 +61,7 @@ export function AppShell({ me, children }: { me: AdminMe; children: ReactNode })
               className="inline-flex min-h-control items-center gap-2 rounded-md px-3 text-sm font-semibold text-fg-muted hover:bg-surface-hover hover:text-fg"
             >
               <LogOut aria-hidden className="size-4" />
-              <span>Sign out</span>
+              <span className="sr-only sm:not-sr-only">Sign out</span>
             </button>
           </form>
         </div>

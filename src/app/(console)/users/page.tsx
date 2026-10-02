@@ -71,6 +71,7 @@ export default async function UsersPage({ searchParams }: PageProps<"/users">) {
         columns={COLUMNS}
         rows={result.ok ? result.data.items : []}
         rowKey={(u) => u.id}
+        stickyLastColumn
         error={result.ok ? undefined : { message: result.error.message, action: <ButtonLink href={PATH}>Try again</ButtonLink> }}
         empty={
           result.ok && result.data.total_items > 0
