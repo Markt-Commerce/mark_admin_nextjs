@@ -67,7 +67,8 @@ export function Menu({
     else if (e.key === "Tab") close(false);
   };
 
-  let index = -1;
+  // Position of each section's first item in the flat (keyboard) order.
+  const offsets = sections.map((_, si) => sections.slice(0, si).reduce((n, sec) => n + sec.items.length, 0));
   return (
     <div ref={wrapper} className="relative inline-flex">
       <button
@@ -106,9 +107,8 @@ export function Menu({
             section.items.length ? (
               <div key={section.label} role="group" aria-label={section.label} className={cn(si > 0 && "mt-1 border-t border-border pt-1")}>
                 <p className="px-2.5 pt-1.5 pb-1 text-xs font-semibold text-fg-muted">{section.label}</p>
-                {section.items.map((item) => {
-                  index += 1;
-                  const i = index;
+                {section.items.map((item, ii) => {
+                  const i = offsets[si] + ii;
                   return (
                     <button
                       key={item.label}
