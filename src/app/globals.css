@@ -1,26 +1,143 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Markt admin design tokens. The one place colours, type, spacing, radius
+ * and shadows are defined; components use the Tailwind utilities generated
+ * from the @theme block below and never raw hex values.
+ *
+ * Brand values come from markt_angular (tailwind.config.js `secRed`,
+ * src/styles.css). Everything else was proposed in docs/PHASE_0_AUDIT.md §4
+ * and signed off. All text pairs meet WCAG AA (4.5:1).
+ *
+ * Light theme only: the brand source defines no dark mode.
+ */
+
+@theme {
+  /* --- Brand: identity, never actions ------------------------------- */
+  --color-brand: #e94c2a; /* logo, accents, active nav marker. Not for text (3.8:1). */
+  --color-brand-strong: #c93d1f; /* brand-coloured text and links (5.0:1 on white) */
+  --color-brand-subtle: #fff5f2; /* tinted brand surface (brand-strong on it: 4.7:1) */
+
+  /* --- Actions ------------------------------------------------------ */
+  --color-primary: #1c1c1c; /* safe primary actions: Save, Verify */
+  --color-primary-hover: #000000;
+  --color-on-primary: #ffffff;
+  --color-danger: #b42318; /* destructive only: Ban, Reject, Suspend (6.6:1) */
+  --color-danger-hover: #912018;
+  --color-danger-subtle: #fef3f2;
+  --color-danger-border: #fecdca;
+  --color-on-danger: #ffffff;
+
+  /* --- Text --------------------------------------------------------- */
+  --color-fg: #111111;
+  --color-fg-muted: #626c70; /* lowest-contrast text allowed (5.4:1 on white) */
+  --color-fg-inverse: #ffffff;
+
+  /* --- Surfaces and lines ------------------------------------------- */
+  --color-page: #f7f7f8;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f5f5f5; /* brand secWhite */
+  --color-surface-hover: #f2f2f3;
+  --color-border: #e4e4e7;
+  --color-border-strong: #c9c9cf;
+  --color-focus: #c93d1f;
+  --color-backdrop: rgb(17 17 17 / 0.48);
+
+  /* --- Status tones (text on tint, all >= 5:1) ------------------------ */
+  --color-success-fg: #067647;
+  --color-success-bg: #ecfdf3;
+  --color-success-border: #abefc6;
+  --color-warning-fg: #93370d;
+  --color-warning-bg: #fffaeb;
+  --color-warning-border: #fedf89;
+  --color-danger-fg: #b42318;
+  --color-danger-bg: #fef3f2;
+  --color-info-fg: #175cd3;
+  --color-info-bg: #eff8ff;
+  --color-info-border: #b2ddff;
+  --color-attention-fg: #b93815;
+  --color-attention-bg: #fff4ed;
+  --color-attention-border: #f9dbaf;
+  --color-neutral-fg: #475467;
+  --color-neutral-bg: #f2f4f7;
+  --color-neutral-border: #d0d5dd;
+  --color-muted-fg: #626c70;
+  --color-muted-bg: #f9fafb;
+
+  /* --- Type --------------------------------------------------------- */
+  --font-sans: var(--font-livvic), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.25rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.25rem;
+
+  /* --- Shape and depth ---------------------------------------------- */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 0.05);
+  --shadow-popover: 0 8px 24px rgb(16 24 40 / 0.12), 0 2px 6px rgb(16 24 40 / 0.06);
+  --shadow-modal: 0 24px 48px rgb(16 24 40 / 0.18);
+
+  /* --- Layout ------------------------------------------------------- */
+  --spacing-control: 2.5rem; /* minimum interactive height: 40px */
+  --spacing-sidebar: 15rem;
+  --spacing-topbar: 4rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    color-scheme: light;
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    background: var(--color-page);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-brand-subtle);
+    color: var(--color-fg);
+  }
+
+  dialog::backdrop {
+    background: var(--color-backdrop);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
