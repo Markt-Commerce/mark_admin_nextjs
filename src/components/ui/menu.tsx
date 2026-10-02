@@ -59,12 +59,14 @@ export function Menu({
   const onMenuKey = (e: KeyboardEvent) => {
     const current = itemRefs.current.findIndex((el) => el === document.activeElement);
     const go = (i: number) => itemRefs.current[(i + flat.length) % flat.length]?.focus();
-    if (e.key === "ArrowDown") (e.preventDefault(), go(current + 1));
-    else if (e.key === "ArrowUp") (e.preventDefault(), go(current - 1));
-    else if (e.key === "Home") (e.preventDefault(), go(0));
-    else if (e.key === "End") (e.preventDefault(), go(flat.length - 1));
-    else if (e.key === "Escape") (e.preventDefault(), close());
-    else if (e.key === "Tab") close(false);
+    switch (e.key) {
+      case "ArrowDown": e.preventDefault(); go(current + 1); break;
+      case "ArrowUp": e.preventDefault(); go(current - 1); break;
+      case "Home": e.preventDefault(); go(0); break;
+      case "End": e.preventDefault(); go(flat.length - 1); break;
+      case "Escape": e.preventDefault(); close(); break;
+      case "Tab": close(false); break;
+    }
   };
 
   // Position of each section's first item in the flat (keyboard) order.
@@ -119,7 +121,9 @@ export function Menu({
                       role="menuitem"
                       tabIndex={-1}
                       onClick={() => {
-                        close(false);
+                        // A dialog opened by this item must return focus to
+                        // the persistent trigger, not the unmounted menu item.
+                        close();
                         item.onSelect();
                       }}
                       className={cn(
