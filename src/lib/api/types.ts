@@ -12,6 +12,7 @@ export const PERMISSIONS = [
   "user.verify_email",
   "user.force_logout",
   "user.manage_roles",
+  "user.manage_staff",
   "seller.view",
   "seller.verify",
   "seller.suspend",
