@@ -1,7 +1,7 @@
 "use server";
 
 import type { ApiResult } from "@/lib/api/errors";
-import type { AdminUserDetail, ResendVerificationResponse } from "@/lib/api/types";
+import type { AdminRole, AdminUserDetail, ResendVerificationResponse } from "@/lib/api/types";
 import { LIMITS } from "@/lib/api/types";
 import { adminMutate } from "@/lib/dal";
 
@@ -57,4 +57,16 @@ export async function setRoles(
   roles: { is_buyer?: boolean; is_seller?: boolean },
 ): Promise<ApiResult<AdminUserDetail>> {
   return adminMutate<AdminUserDetail>(path(id, "/roles"), { method: "POST", body: roles });
+}
+
+/** `null` removes the account's staff role. Super admins only. */
+export async function setStaffRole(
+  id: string,
+  adminRole: AdminRole | null,
+  reason?: string,
+): Promise<ApiResult<AdminUserDetail>> {
+  return adminMutate<AdminUserDetail>(path(id, "/staff-role"), {
+    method: "POST",
+    body: { admin_role: adminRole, ...(reason ? { reason: reason.slice(0, LIMITS.reason) } : {}) },
+  });
 }

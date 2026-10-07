@@ -13,6 +13,7 @@ import {
   Pencil,
   PlayCircle,
   Send,
+  ShieldCheck,
   ShieldOff,
   Undo2,
   UserCog,
@@ -39,6 +40,7 @@ import { roleLabel } from "@/lib/status";
 import { resendVerification, userReasonAction, verifyEmail } from "./actions";
 import { EditProfileDialog } from "./edit-profile-dialog";
 import { ManageRolesDialog } from "./manage-roles-dialog";
+import { StaffRoleDrawer } from "./staff-role-drawer";
 
 type DialogKey =
   | "edit"
@@ -49,7 +51,8 @@ type DialogKey =
   | "unban"
   | "force-logout"
   | "verify-email"
-  | "resend";
+  | "resend"
+  | "staff-role";
 
 export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }) {
   const me = useMe();
@@ -81,6 +84,8 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
     ] : [] },
     { label: "Roles and sessions", items: [
       ...(allow("user.manage_roles") ? [{ label: "Manage buyer and seller roles", icon: <UserCog />, onSelect: () => setOpen("roles") }] : []),
+      // A legacy is_admin account has every permission whatever its role, so the API won't change it.
+      ...(allow("user.manage_staff") && !user.is_admin ? [{ label: "Change staff role", icon: <ShieldCheck />, onSelect: () => setOpen("staff-role") }] : []),
       ...(allow("user.force_logout") ? [{ label: "Sign out everywhere", icon: <LogOut />, onSelect: () => setOpen("force-logout") }] : []),
     ] },
     { label: "Account access", items: [
@@ -160,6 +165,7 @@ export function UserDetailView({ initialUser }: { initialUser: AdminUserDetail }
 
       <EditProfileDialog open={open === "edit"} onClose={close} user={user} onSaved={applied("Profile saved")} />
       <ManageRolesDialog open={open === "roles"} onClose={close} user={user} onSaved={applied("Roles updated")} />
+      <StaffRoleDrawer open={open === "staff-role"} onClose={close} user={user} onSaved={applied("Staff role updated")} />
 
       <ActionDialog
         identity={identity}

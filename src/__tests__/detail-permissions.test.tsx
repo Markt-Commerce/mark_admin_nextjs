@@ -11,7 +11,7 @@ import { PERMISSIONS, type AdminMe, type AdminUserDetail, type AdminSellerDetail
 
 vi.mock("@/app/(console)/users/[id]/actions", () => ({
   resendVerification: vi.fn(), userReasonAction: vi.fn(), verifyEmail: vi.fn(),
-  editProfile: vi.fn(), uploadProfilePicture: vi.fn(), setRoles: vi.fn(),
+  editProfile: vi.fn(), uploadProfilePicture: vi.fn(), setRoles: vi.fn(), setStaffRole: vi.fn(),
 }));
 vi.mock("@/app/(console)/sellers/[id]/actions", () => ({
   rejectSeller: vi.fn(), sellerReasonAction: vi.fn(), verifySeller: vi.fn(),
@@ -36,7 +36,7 @@ const shop: AdminSellerDetail = {
 
 // Expected permissions checked against markt_python/app/admin/permissions.py.
 const roles: Array<{ role: string; permissions: string[]; userMenu: string[]; sellerMenu: string[] }> = [
-  { role: "super_admin", permissions: [...PERMISSIONS], userMenu: ["Mark email as verified", "Resend verification code", "Manage buyer and seller roles", "Sign out everywhere", "Suspend user", "Ban user"], sellerMenu: ["Reject verification", "Suspend shop", "Feature shop"] },
+  { role: "super_admin", permissions: [...PERMISSIONS], userMenu: ["Mark email as verified", "Resend verification code", "Manage buyer and seller roles", "Change staff role", "Sign out everywhere", "Suspend user", "Ban user"], sellerMenu: ["Reject verification", "Suspend shop", "Feature shop"] },
   { role: "support", permissions: ["user.view", "seller.view", "user.edit", "user.verify_email", "user.force_logout"], userMenu: ["Mark email as verified", "Resend verification code", "Sign out everywhere"], sellerMenu: [] },
   { role: "moderation", permissions: ["user.view", "seller.view", "user.suspend", "user.ban", "seller.suspend"], userMenu: ["Suspend user", "Ban user"], sellerMenu: ["Suspend shop"] },
   { role: "finance", permissions: ["user.view", "seller.view", "seller.edit_payout"], userMenu: [], sellerMenu: [] },

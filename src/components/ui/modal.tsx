@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useId, useRef } from "react";
+import { type ReactNode, type SyntheticEvent, useEffect, useId, useRef } from "react";
 import { cn } from "@/lib/cn";
 
 export interface ModalIdentity {
@@ -42,46 +42,15 @@ export function Modal({
   /** While a request is in flight, Escape does nothing. */
   busy?: boolean;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  const returnFocus = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const descId = useId();
-
-  useEffect(() => {
-    const dialog = ref.current;
-    if (!dialog) return;
-    if (open && !dialog.open) {
-      returnFocus.current = document.activeElement as HTMLElement | null;
-      dialog.showModal();
-      // showModal() focuses the first focusable element.
-      // Content can ask for a better starting point with data-autofocus.
-      dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
-    } else if (!open && dialog.open) {
-      dialog.close();
-      returnFocus.current?.focus();
-    }
-  }, [open]);
-
-  // Unmounting while open (e.g. navigating away) must not strand focus.
-  useEffect(() => {
-    const target = returnFocus;
-    return () => target.current?.focus();
-  }, []);
+  const dialogProps = useModalDialog({ open, onClose, busy });
 
   return (
     <dialog
-      ref={ref}
+      {...dialogProps}
       aria-labelledby={titleId}
       aria-describedby={description ? descId : undefined}
-      onCancel={(e) => {
-        e.preventDefault();
-        if (!busy) onClose();
-      }}
-      // Browsers may still close a modal dialog on a repeated Escape even
-      // when cancel is prevented; keep the parent's state in step.
-      onClose={() => {
-        if (open) onClose();
-      }}
       className={cn(
         "m-auto w-[calc(100%-2rem)] rounded-xl border border-border bg-surface p-0 text-fg shadow-modal",
         size === "sm" && "max-w-md",
@@ -122,4 +91,48 @@ export function Modal({
       )}
     </dialog>
   );
+}
+
+/**
+ * The native <dialog> wiring shared by Modal and Drawer: open and close in
+ * step with `open`, return focus to whatever opened it, and ignore Escape
+ * while busy. Spread the result onto the <dialog>.
+ */
+export function useModalDialog({ open, onClose, busy }: { open: boolean; onClose: () => void; busy?: boolean }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const returnFocus = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    if (open && !dialog.open) {
+      returnFocus.current = document.activeElement as HTMLElement | null;
+      dialog.showModal();
+      // showModal() focuses the first focusable element.
+      // Content can ask for a better starting point with data-autofocus.
+      dialog.querySelector<HTMLElement>("[data-autofocus]")?.focus();
+    } else if (!open && dialog.open) {
+      dialog.close();
+      returnFocus.current?.focus();
+    }
+  }, [open]);
+
+  // Unmounting while open (e.g. navigating away) must not strand focus.
+  useEffect(() => {
+    const target = returnFocus;
+    return () => target.current?.focus();
+  }, []);
+
+  return {
+    ref,
+    onCancel: (e: SyntheticEvent<HTMLDialogElement>) => {
+      e.preventDefault();
+      if (!busy) onClose();
+    },
+    // Browsers may still close a modal dialog on a repeated Escape even
+    // when cancel is prevented; keep the parent's state in step.
+    onClose: () => {
+      if (open) onClose();
+    },
+  };
 }
